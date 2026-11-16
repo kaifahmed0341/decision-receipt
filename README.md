@@ -1,187 +1,143 @@
 # Decision receipt
 
-A Forge app for Jira. It adds an issue panel that checks a task against the Confluence decision pages linked to it, and shows the exact sentences it relied on.
+**A receipt, not a reviewer.** Decision receipt is a Forge app for Jira. On any issue it shows what the Confluence decision pages linked to that issue actually say about it: the exact sentence, the page version, when it was read, and whether it supports the work, conflicts with it, or decides nothing. It never says the work is approved.
 
-For each linked page the panel shows:
+Built for [Codegeist 2026](https://codegeist2026.devpost.com/), category Apps for Software Teams. For the engineer or lead who has to show why a change was allowed to start.
 
-- whether the page supports the task, conflicts with it, or does not state a decision;
-- the sentences it used, quoted word for word, with the reason each one was picked;
-- the page version, when the page was last edited, and when the panel read it.
+![DREC-2: one page agrees, another says "will not"](docs/proof/drec-2-conflict.png)
 
-A conflict on any page is reported as an unresolved conflict. A page without a decision is reported as missing evidence. The panel never reports a task as approved; it shows what the pages say and leaves the decision to the reviewer.
+## Three things it shows
 
-A reviewer can **record a check** once they have read the evidence. If a linked page is edited, added, removed or hidden after that, the panel marks the recorded check **stale** until the reviewer records a fresh one.
+**1. You never see a page you cannot open.** Every read runs as the viewer (`api.asUser()`). A linked page the viewer may not open shows as "Not available to you", with no title, no link, no excerpt and no page id, and the Rovo agent can only call it "linked page 3". Proven on a live site with two accounts: the reviewer saw "Evidence incomplete" and nothing of the restricted page anywhere in the issue, while the page owner saw "Unresolved conflict" with the page quoted. [Reviewer](docs/proof/drec-6-reviewer-restricted.png), [owner](docs/proof/drec-6-owner-control.png), [Confluence refusing the reviewer](docs/proof/drec-6-reviewer-confluence-locked.png), [text check of both pages](docs/proof/drec-6-permission-check.json).
 
-Built for [Codegeist 2026](https://codegeist2026.devpost.com/), category Apps for Software Teams.
+**2. Each reviewer's check is theirs, and it goes stale.** A reviewer can record a check after reading the evidence. The record is kept for that person only and holds no page text. When a linked page is edited, a link is added or removed, a page becomes unreadable, the issue summary is reworded or the rules change, the panel says the recorded check is stale, names what changed, and asks for a fresh one. [After a page edit](docs/proof/drec-7-stale-after-edit.png), [after a summary edit](docs/proof/drec-1-stale-after-summary-edit.png), [a recorded conflict, shown in a neutral colour](docs/proof/drec-2-recorded-conflict-neutral.png).
 
-![DREC-7: a recorded check goes stale after the decision page is edited](docs/proof/drec-7-stale-after-edit.png)
+**3. Every verdict carries a verbatim quote, a version and a time, from published rules with a measured error rate.** The verdicts come from fixed rules anyone can read ([docs/rules.md](docs/rules.md)), not a model. They read Confluence's own decision formats (status lozenges, decision items, task lists, decision log tables) and check which way a decision points, so "we agreed to keep the endpoint" conflicts with a task that removes it. On a 75-sentence set written by an outside reviewer the rules scored 65 of 75, with no conflict read as support; the misses are listed. [DACI page](docs/proof/drec-8-decision-template.png), [status per section](docs/proof/drec-9-scoped-status.png), [decision log](docs/proof/drec-10-decision-log.png).
 
-## What it does
+## Ask Rovo
 
-- Adds a **Decision receipt** issue panel to Jira (`jira:issuePanel`, UI Kit).
-- Reads the issue summary and its remote links, then reads each linked Confluence page on the same site, as the viewer.
-- Reads Confluence's own decision formats: status lozenges, native decision items, task lists with their done state, page-properties tables and decision log tables. Placeholders, struck-out text and hidden macros are ignored.
-- Checks which way a decision points: keeping, lowering or retiring what the task changes is a conflict, even when the sentence says "agreed".
-- Classifies with fixed rules ([docs/rules.md](docs/rules.md)). No AI model, no outside service. On a held-out set written by a reviewer it scored 65 of 75, with no conflict read as support.
-- Lets each reviewer record a check and flags it stale when a linked page, the issue summary, a result or the set of unread links changes.
-- Reports, per page and in plain words: pages the viewer cannot open, deleted or archived pages, rate limits, interrupted requests, pages not read because of the time limit, links to other sites and links without a page id.
+On sites with Rovo, the **Decision receipt** agent answers questions such as "Show the decision receipt for DREC-2" in Rovo chat. It calls three read-only actions that return the same receipt the panel computes, with the same permissions, and it is told to quote exactly, never change a verdict, and put anything of its own under "Rovo's reading (not part of the receipt)". The panel's **Ask Rovo** button opens it on the current issue. The same three actions are exposed as MCP tools (`rovo:mcp`) for custom agents in Rovo Studio and, once a site admin turns it on, outside MCP clients; [skill/SKILL.md](skill/SKILL.md) tells an agent how to use them. The prompt is in [agent/prompt.txt](agent/prompt.txt). No outside model, no key, no extra scope.
 
-## What it does not do yet
+## Judge setup
 
-- It writes nothing to Jira or Confluence. No comments, no transitions.
-- It reads only pages linked to the issue. It does not search Confluence.
-- Its rules still miss some phrasings; see the measured limits in [docs/rules.md](docs/rules.md).
-- It has no Rovo agent, MCP server or Teamwork Graph integration.
-- It is deployed to the development environment only. There is no production deployment or installation link yet.
+You need an Atlassian Cloud site with **Jira and Confluence** where you are a site admin. The Codegeist demo site works and has Rovo; a free developer site works for everything except the Rovo agent. Expected results are given at each step.
 
-## Permission model
+1. **Install.** Open the installation link from the Devpost submission and select **Get app**. Choose your site. Jira is installed automatically; also tick **Confluence** under "Select any additional Atlassian apps", then select **Install**. Expected: "Installation successful" next to both Jira and Confluence. The app needs both to read decision pages.
 
-Every Jira and Confluence request goes out with `api.asUser()`, so it runs with the permissions of the person viewing the issue. The app never reads a page with its own identity. A reviewer sees only what they could open themselves.
+2. **Load the demo data.** Create an API token at <https://id.atlassian.com/manage-profile/security/api-tokens>. With Node.js 20 or later:
 
-When a page cannot be read, Confluence answers 404 (or 403) whether the page was deleted or the viewer lacks permission. The panel does not try to tell these apart. It shows "Not available to you" with no title, link or text from the page; the Jira link's own title and URL are left out too, because a URL can contain the page title.
+   ```sh
+   git clone https://github.com/kaifahmed0341/decision-receipt.git
+   cd decision-receipt
+   node scripts/fixtures.mjs
+   ```
 
-A recorded check is stored in the app's Forge key-value storage under a key made of the site's cloud id, the issue id and the reviewer's account id. It holds, for each linked page, the page id, whether it could be read, its version and the verdict. It holds no page text and no titles. One reviewer's record is never read for another reviewer, so a record cannot reveal a page the second reviewer cannot open. The page ids used for stale detection stay on the server; the panel only receives a hash of them.
+   No `npm install` is needed. The script asks for your site address, your email and the token (hidden, not saved), checks them, then creates a `DREC` project, a `DRDEMO` space, eleven fictional pages and ten issues, printing each one as it goes. Expected last line: "Done. Open https://your-site.atlassian.net/browse/DREC-2 ...". If your site already has a `DREC` project, run it with `FIXTURE_PROJECT_KEY=DRX node scripts/fixtures.mjs`. Running it again changes nothing.
 
-Tested on the live site with two accounts on 16 November 2026 (issue DREC-6, one page restricted to its owner):
+3. **Open the panel.** Open `DREC-2`. Under the summary select **View app actions**, then **Decision receipt**. The panel stays on that issue from then on. Expected: "Unresolved conflict", with "Decision: invoice PDF renderer" quoted as support and "Release review: 4.2 readiness" quoted as a conflict, each with its version and read time. The other issues:
 
-| Account | Panel result | Restricted page title or text anywhere in the issue page | Proof |
-|---|---|---|---|
-| Demo Reviewer, no access to the page | Evidence incomplete; "Not available to you" | No | [panel](docs/proof/drec-6-reviewer-restricted.png), [Confluence refuses the page](docs/proof/drec-6-reviewer-confluence-locked.png) |
-| kaif ahmed, page owner (positive control) | Unresolved conflict; quotes the restricted page | Yes | [panel](docs/proof/drec-6-owner-control.png) |
+   | Issue | Expected headline | What it shows |
+   |---|---|---|
+   | DREC-1 | Evidence found on every linked page | a plain approval |
+   | DREC-2 | Unresolved conflict | two pages that disagree |
+   | DREC-3 | Missing evidence | notes that discuss the task but decide nothing |
+   | DREC-4 | Could not check | the linked page is in the trash |
+   | DREC-5 | No decision pages linked | nothing linked |
+   | DREC-6 | Unresolved conflict for you; Evidence incomplete for anyone else | one page is restricted to the account that ran the script |
+   | DREC-7 | Evidence found on every linked page | use it for the stale check below |
+   | DREC-8 | Evidence found on every linked page | a DACI page: DECIDED lozenge and a decision item |
+   | DREC-9 | Unresolved conflict | meeting notes; only this issue's section (DEFERRED) counts, not another issue's APPROVED |
+   | DREC-10 | Evidence found on every linked page | a decision log row with an APPROVED lozenge and a done approval task; a struck-out "rejected" is ignored |
 
-The text check for both accounts is in [docs/proof/drec-6-permission-check.json](docs/proof/drec-6-permission-check.json). Jira's own "Confluence content" section, which is not part of this app, still lists the link URL to the reviewer and labels it as restricted.
+4. **See a check go stale.** On `DREC-7` select **Record this check**. Expected: "Recorded check still matches". Now open the linked page "Decision: admin console sign-in" in Confluence, edit it, change "Approved: the admin console moves to single sign-on in release 4.3" to "Deferred: single sign-on for the admin console waits for release 4.4", and publish. Reopen `DREC-7`. Expected: "Recorded check is stale", naming the page, its old and new version, and that it supported the task before and conflicts now; the headline is "Unresolved conflict".
 
-Scopes in `manifest.yml`:
+5. **See the permission boundary.** `DREC-6` links "Legal hold review: audit logs", which the script restricted to your account. Invite any second user as a normal Jira and Confluence user and open `DREC-6` as them (or in a private window). Expected: "Evidence incomplete" and "Linked page 1: Not available to you", with nothing from that page anywhere in the panel; your own account sees "Unresolved conflict" with the page quoted.
 
-| Scope | Used for |
-|---|---|
-| `read:jira-work` | `GET /rest/api/3/issue/{key}?fields=summary` and `GET /rest/api/3/issue/{key}/remotelink` |
-| `read:page:confluence` | `GET /wiki/api/v2/pages/{id}?body-format=storage` |
-| `storage:app` | each reviewer's recorded check |
+6. **Ask Rovo** (sites with Rovo). On `DREC-2` select **Ask Rovo** in the panel, or open Rovo chat and choose the **Decision receipt** agent. Expected: the overall result, each page with its label, version and read time, the deciding quotes word for word, and, if it adds anything, a separate "Rovo's reading (not part of the receipt)". [Screenshot from the demo site](docs/proof/rovo-agent-drec-2.png).
 
-The app declares Jira as its required product and Confluence as optional (`app.compatibility`), which is how a Forge app placed in Jira gets to read Confluence on the same site. It must be installed in both.
+7. **MCP tools** (optional). In Rovo Studio, create a custom agent and add the Decision receipt tools. For outside MCP clients a site admin turns the tools on under Administration, Apps, Sites, your site, Connected apps; the endpoint is `https://mcp.atlassian.com/forge/a6c7992f-da45-443e-ab7f-88cbffdd967b`.
+
+Steps 1 to 4 were walked on 16 November 2026 on a second site created and administered by a different account from the app owner's: installed from the sharing link, demo data loaded with that account's own token, all ten issues showed the expected headline, and DREC-7 went stale after its page was edited ([log](docs/proof/second-site-walk.txt)). Step 5 was shown on the author's development site with two accounts (screenshots linked above), and step 6 on the Codegeist demo site.
+
+## What it does not do
+
+- It writes nothing to Jira or Confluence: no comments, no transitions. The only thing it stores is each reviewer's own recorded check.
+- It reads only pages linked to the issue. It does not search Confluence or use Teamwork Graph.
+- Its rules still miss some phrasings. The measured misses and limits are in [docs/rules.md](docs/rules.md).
+- It does not use Forge LLMs or any outside model. Rovo, when used, runs on the customer's own site.
+
+## Permission model and data
+
+- Scopes: `read:jira-work` (issue summary, history and remote links), `read:page:confluence` (page body and version), `storage:app` (recorded checks). No write scopes, no outside network access.
+- When a page cannot be read, Confluence answers 404 (or 403) whether it was deleted or the viewer lacks permission. The app does not try to tell these apart and shows neither the page's title nor the Jira link's title or URL, since a URL can carry a title.
+- A recorded check is keyed by site, issue and account, and holds page ids, read status, versions, results and a hash of the summary. One reviewer's record is never read for another. Details: [PRIVACY.md](PRIVACY.md).
+- The page link in the panel is built from the page Confluence returned, never from the Jira link's own URL; links with no proper host, or whose page id disagrees with their address, are not trusted.
+- Jira is the app's required product and Confluence optional (`app.compatibility`), which is how an app placed in Jira reads Confluence on the same site.
 
 ## Acceptance cases
 
-| Case from the plan | Result on the live site | Proof | Unit tests |
+| Case | Result on a live site | Proof | Unit tests |
 |---|---|---|---|
 | A linked page states the decision clearly | Excerpt, link and page version shown | [DREC-1](docs/proof/drec-1-supported.png) | `fixtures.test.mjs` |
-| A second accessible source conflicts | Both pages shown, "Unresolved conflict" | [DREC-2](docs/proof/drec-2-conflict.png) | `fixtures.test.mjs`, `classify.test.mjs` |
-| The linked page omits the decision | "Missing evidence", the mention shown as no decision | [DREC-3](docs/proof/drec-3-missing.png) | `fixtures.test.mjs` |
+| Two accessible sources conflict | Both pages shown, "Unresolved conflict" | [DREC-2](docs/proof/drec-2-conflict.png) | `fixtures.test.mjs`, `classify.test.mjs` |
+| The linked page omits the decision | "Missing evidence" | [DREC-3](docs/proof/drec-3-missing.png) | `fixtures.test.mjs` |
 | The linked page is deleted | "Deleted or archived", nothing quoted | [DREC-4](docs/proof/drec-4-deleted-page.png) | `receipt.test.mjs` |
-| User A can read a source, user B cannot | B sees no title, text or link; A sees the page | [DREC-6](docs/proof/drec-6-reviewer-restricted.png) and control | `receipt.test.mjs`, `fixtures.test.mjs`, `staleness.test.mjs` |
-| The page changes after a check | Recorded check marked stale until a fresh one is recorded | [stale](docs/proof/drec-7-stale-after-edit.png), [fresh](docs/proof/drec-7-fresh-check-recorded.png) | `staleness.test.mjs` |
-| The task is reworded after a check | Recorded check marked stale, naming the summary change and the changed result | [DREC-1](docs/proof/drec-1-stale-after-summary-edit.png) | `staleness.test.mjs` |
-| A decision page uses Confluence's own formats | DECIDED lozenge and decision item read as support | [DREC-8](docs/proof/drec-8-decision-template.png) | `storage.test.mjs` |
-| A page holds statuses for several issues | Only this issue's section counts | [DREC-9](docs/proof/drec-9-scoped-status.png) | `classify.test.mjs`, `storage.test.mjs` |
-| A decision log table with a status lozenge, a done task and struck-out text | Row and task read as support; struck-out text ignored | [DREC-10](docs/proof/drec-10-decision-log.png) | `storage.test.mjs` |
-| A conflict is recorded | The record banner names "Unresolved conflict" in a neutral colour | [DREC-2](docs/proof/drec-2-recorded-conflict-neutral.png) | `staleness.test.mjs` |
-| A Jira link points somewhere else | The panel links to the page it read; host-less links are not trusted | not shown live | `receipt.test.mjs`, `text-links.test.mjs` |
-| Rate limit | Up to two retries honouring `Retry-After` while inside the time budget, then "Not checked yet" for that page | not shown live | `receipt.test.mjs`, `staleness.test.mjs` |
-| Interrupted request | "Request interrupted" for that page; a whole-panel interruption says nothing was recorded | not shown live | `receipt.test.mjs` |
-| The resolver runs out of time | Pages after 18 seconds marked "Not read" | not shown live | `receipt.test.mjs` |
+| User A can read a source, user B cannot | B sees no title, text or link; A sees the page | [DREC-6](docs/proof/drec-6-reviewer-restricted.png) and control | `receipt.test.mjs`, `fixtures.test.mjs`, `agent.test.mjs` |
+| The page changes after a check | Recorded check stale until a fresh one is recorded | [stale](docs/proof/drec-7-stale-after-edit.png), [fresh](docs/proof/drec-7-fresh-check-recorded.png) | `staleness.test.mjs` |
+| The task is reworded after a check | Stale, naming the summary change and the changed result | [DREC-1](docs/proof/drec-1-stale-after-summary-edit.png) | `staleness.test.mjs` |
+| Confluence's own decision formats | DECIDED lozenge, decision item, decision log row read | [DREC-8](docs/proof/drec-8-decision-template.png), [DREC-10](docs/proof/drec-10-decision-log.png) | `storage.test.mjs` |
+| A page holds statuses for several issues | Only this issue's section counts | [DREC-9](docs/proof/drec-9-scoped-status.png) | `classify.test.mjs` |
+| The Rovo agent | Quotes the receipt, labels its own reading | [DREC-2 in Rovo](docs/proof/rovo-agent-drec-2.png) | `agent.test.mjs` |
+| A second, independent site installs the release | Installed from the link; ten of ten expected results | [log](docs/proof/second-site-walk.txt) | |
+| Rate limit, interrupted request, time limit | Reported per page; never guessed | not triggerable on demand | `receipt.test.mjs` |
 
-Rate limits and interruptions cannot be triggered on demand on a live site, so they are covered by unit tests with faked responses. The comment and second-site cases in the plan are not part of this read-only version.
+## Developer setup
 
-## Recreate everything on a fresh site
+You need Node.js 22, the Forge CLI and an Atlassian API token.
 
-Steps 3 to 7 were run on the author's site on 16 November 2026. The author's copy was created with `forge create` rather than `forge register`; otherwise steps 1 and 2 match its setup. You need Node.js 22, a Jira and Confluence Cloud site where you are a site admin, and an Atlassian API token from <https://id.atlassian.com/manage-profile/security/api-tokens>.
+```sh
+npm install -g @forge/cli
+git clone https://github.com/kaifahmed0341/decision-receipt.git
+cd decision-receipt && npm install
+export FORGE_EMAIL=you@example.com FORGE_API_TOKEN=your-token
+npm test                       # 90 unit tests, no network
+forge register decision-receipt   # your own copy; replaces app.id
+forge deploy -e development
+forge install -e development -p jira -s your-site.atlassian.net
+forge install -e development -p confluence -s your-site.atlassian.net
+npm run fixtures               # same as node scripts/fixtures.mjs
+npm run evaluate               # score the rules on the development set
+```
 
-1. Install the tools and check the login:
-
-   ```sh
-   npm install -g @forge/cli
-   git clone https://github.com/kaifahmed0341/decision-receipt.git
-   cd decision-receipt
-   npm install
-   export FORGE_EMAIL=you@example.com
-   export FORGE_API_TOKEN=your-token
-   forge whoami
-   npm test
-   ```
-
-2. Register your own copy of the app (this replaces `app.id` in `manifest.yml`), deploy and install it in both products:
-
-   ```sh
-   forge register decision-receipt
-   forge deploy -e development
-   forge install -e development -p jira -s your-site.atlassian.net
-   forge install -e development -p confluence -s your-site.atlassian.net
-   ```
-
-   `forge register` may ask for a Developer Space; create one in the Developer Console first if you have none. If a later deploy adds a scope to an installed app, Forge asks you to approve a major version; rerun with `--approve MAJOR_VERSION_RULE` and then `forge install --upgrade` for both products.
-
-3. Create the demonstration data. The page text refers to issue keys `DREC-1` to `DREC-10`, so use a site without a `DREC` project:
-
-   ```sh
-   ATLASSIAN_SITE=https://your-site.atlassian.net \
-   ATLASSIAN_EMAIL=you@example.com \
-   ATLASSIAN_API_TOKEN=your-token \
-   npm run fixtures
-   ```
-
-   The script is safe to run again; it reuses what exists. It restricts "Legal hold review: audit logs" so only your account can read it.
-
-4. Open `https://your-site.atlassian.net/browse/DREC-1`, select **View app actions** under the summary and choose **Decision receipt**. The panel stays on that issue afterwards. Repeat for DREC-2 to DREC-10.
-
-5. Stale check: on DREC-7 select **Record this check**. Then run `npm run edit-page` with the same three variables and reopen DREC-7; the panel shows "Recorded check is stale" with the version change. `npm run edit-page -- --restore` puts the approval back.
-
-6. Permission check: invite a second user as a plain Jira and Confluence user (Administration, Users, Invite users, groups `jira-users-<site>` and `confluence-users-<site>`). Signed in as that user, open DREC-6 and add the panel. They see "Evidence incomplete" and "Not available to you" for the restricted page, while your own account sees "Unresolved conflict" with the page quoted.
-
-7. Measure the rules: `npm run evaluate` scores the development set and prints every hit and miss with precision and recall per label. `npm run evaluate -- path/to/other.json` scores any set in the same format.
-
-## Demonstration data
-
-`fixtures/data.mjs` holds one Jira project (`DREC`), one Confluence space (`DRDEMO`), eleven pages and ten issues. All of it is fictional.
-
-| Issue | Linked pages | Panel result for the fixture owner |
-|---|---|---|
-| DREC-1 Remove the v1 CSV export endpoint | one page that approves it | Evidence found on every linked page |
-| DREC-2 Switch invoice PDFs to the new renderer | one page agrees, one says "will not" | Unresolved conflict |
-| DREC-3 Raise the public API rate limit to 600 requests per minute | meeting notes that discuss it without deciding | Missing evidence |
-| DREC-4 Archive the legacy webhook queue | a page now in the trash | Could not check |
-| DREC-5 Rename the staging cluster | none | No decision pages linked |
-| DREC-6 Move audit logs to cold storage after 90 days | an open page agrees; a page restricted to the owner says "not approved" | Unresolved conflict (other users: Evidence incomplete) |
-| DREC-7 Turn on single sign-on for the admin console | a page that approves it until `edit-page` defers it | Evidence found on every linked page, then Unresolved conflict |
-| DREC-8 Archive the old onboarding emails | a DACI-style page: DECIDED lozenge, native decision item, an editor placeholder | Evidence found on every linked page |
-| DREC-9 Turn off the legacy webhook signatures | meeting notes: this issue's section DEFERRED, another issue's APPROVED | Unresolved conflict |
-| DREC-10 Upgrade the search cluster to version 9 | a decision log table with an APPROVED lozenge, a done approval task, a struck-out note | Evidence found on every linked page |
-
-## Linking a decision page
-
-Use Jira's own **Link Confluence page** action on the issue, or any remote link whose URL is a Confluence page on the same site. The panel reads the page id from the link's `globalId` (`...&pageId=123`) or from the URL (`/wiki/spaces/KEY/pages/123/...` or `viewpage.action?pageId=123`). Short links (`/wiki/x/...`) carry no page id and are reported as unreadable.
-
-The fixture script creates links through `POST /rest/api/3/issue/{key}/remotelink` with application type `com.atlassian.confluence`, the same shape the Jira action creates. Jira recognises these as native Confluence links.
+`npm run edit-page` (and `-- --restore`) edits DREC-7's page from the command line for the stale demo. If a deploy that adds a scope asks to approve a major version, rerun with `--approve MAJOR_VERSION_RULE` and then `forge install --upgrade` for both products.
 
 ## Project layout
 
 ```
-manifest.yml            Forge modules, scopes and Jira/Confluence compatibility
-src/resolvers/          the resolver: Jira and Confluence calls as the current user, storage
-src/lib/links.js        remote links to Confluence page ids, same-site only
-src/lib/storage.js      Confluence storage format to units: sentences, rows, tasks, decisions, statuses
-src/lib/text.js         sentence splitting and entity decoding
-src/lib/direction.js    stems, the task's action, and which way a sentence points
-src/lib/classify.js     the rule set, status scoping and page and issue verdicts
-src/lib/evidence.js     everything the reviewer reads: labels, excerpts, times
-src/lib/receipt.js      one check: retries, interruptions, time budget
-src/lib/staleness.js    recorded checks and stale detection
-src/lib/review.js       loads a check with its record, records a fresh check
-src/frontend/           the UI Kit panel
-fixtures/data.mjs       fictional demonstration data
-fixtures/labelled-excerpts.json  32 hand-labelled sentences (development set)
-fixtures/dev-excerpts.json       62 more hand-labelled sentences (development set)
-scripts/fixtures.mjs    creates the demonstration data on a site
-scripts/edit-page.mjs   edits one fixture page to show a stale check
-scripts/evaluate-rules.mjs  scores the rules against labelled sentences
-test/                   unit tests (node:test)
-test/storage-samples/   storage format Confluence produced, used by the parser tests
-docs/eval/              saved scoring runs: development set and the held-out set
-docs/rules.md           the rules, their measured accuracy and limits
-docs/proof/             screenshots and checks from the running app
-docs/decisions.md       choices made while building, with the alternative rejected
+manifest.yml              panel, Rovo agent, actions, MCP tools, scopes, Jira/Confluence compatibility
+agent/prompt.txt          the Rovo agent's instructions
+skill/SKILL.md            how an outside agent should use the MCP tools
+src/frontend/             the UI Kit panel
+src/resolvers/            the panel's backend
+src/actions/              the three read-only Rovo actions
+src/lib/forge-http.js     every Jira and Confluence call, as the user
+src/lib/storage.js        Confluence storage format to sentences, rows, tasks, decisions, statuses
+src/lib/direction.js      the task's action, and which way a sentence points
+src/lib/classify.js       the rules, status scoping, page and issue verdicts
+src/lib/evidence.js       the wording a reviewer reads
+src/lib/receipt.js        one check: links, retries, interruptions, time budget
+src/lib/staleness.js      recorded checks and what makes them stale
+src/lib/review.js         loading and recording a check
+src/lib/agent.js          the receipt as the Rovo actions return it
+fixtures/                 demo data and the labelled development sets
+scripts/                  demo data setup, the stale-demo edit, rule scoring
+test/                     unit tests and real Confluence storage samples
+docs/rules.md             the rules, measured accuracy and limits
+docs/eval/                saved scoring runs
+docs/proof/               screenshots and logs from live sites
+docs/decisions.md         choices made while building
 ```
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). Privacy: [PRIVACY.md](PRIVACY.md). Terms: [TERMS.md](TERMS.md).

@@ -1,3 +1,8 @@
+Second-site walk, 16 November 2026. Site drec-judge-test.atlassian.net, created through the Cloud Developer Bundle by a
+second Atlassian account (not the app owner), which is its only admin. The app was installed from the production sharing
+link (Jira, with Confluence ticked in the same dialog); both showed "Installation successful". The demo data was created
+with node scripts/fixtures.mjs and that account's own API token. Panel headlines read from the issue view as that account:
+
 DREC-1 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
 DREC-2 expected [Unresolved conflict] got [Unresolved conflict] PASS
 DREC-3 expected [Missing evidence] got [Missing evidence] PASS
@@ -8,3 +13,9 @@ DREC-7 expected [Evidence found on every linked page] got [Evidence found on eve
 DREC-8 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
 DREC-9 expected [Unresolved conflict] got [Unresolved conflict] PASS
 DREC-10 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+
+Step 4 (stale check) as the same account on the same site:
+DREC-7 after Record this check: "Recorded check still matches", headline "Evidence found on every linked page"
+after the page was edited to version 2: "Recorded check is stale", naming "Decision: admin console sign-in" version 1 to 2,
+"Before, it supported the task. Now it conflicts with the task.", headline "Unresolved conflict". PASS
+The page was then restored (version 3).

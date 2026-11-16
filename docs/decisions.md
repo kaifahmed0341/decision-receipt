@@ -106,3 +106,25 @@ Choices made while building the first slice on 16 November 2026, each with the a
 - C1, the judge installation link on a second site, is the next slice.
 - No model and no Rovo module, as instructed.
 - The reviewer account's address and an ownership note were removed from the current files; they remain in earlier commits. Rewriting public history was rejected as out of proportion.
+
+# Slice 4, 16 November 2026
+
+## Rovo
+
+- Rovo does not run on kaifahmed-dev.atlassian.net. Administration shows Rovo access on for all apps with nothing blocked, but no user has AI enabled, Jira shows no Rovo chat, and the Rovo address is a dead link. Atlassian's Rovo limits page says Rovo cannot be turned on for an organization registered with a generic domain such as gmail.com.
+- The Codegeist route was used instead: `forge site provision` created a free demo site, `one-atlas-pxze.atlassian.net`, with Rovo chat working, expiring 14 February 2027 (after judging ends on 3 February). No payment or trial was involved. The agent was built and tested there.
+- The agent's three actions are GET only and return the panel's receipt unchanged. Rejected giving the agent its own reading of pages: the receipt stays the record, and the agent's own words must be labelled as Rovo's reading. Rejected Forge LLMs: they are billed to the developer, including during judging, with no way to switch them off.
+- Actions find the site host from their context or from Jira's server info, which needs no scope, so no scope was added.
+- Records are keyed by the issue id from Jira's answer, so the panel and the agent read the same record.
+
+## Judge path
+
+- Production deploy, then Distribution set to "Sharing with anyone", not "within organization", because judges are outside the owner's organization. The installation page needed a company, a support contact and a privacy policy; PRIVACY.md and TERMS.md were added for that.
+- "Does your app store personal data?" was answered Yes: recorded checks are keyed by Atlassian account id and kept longer than 24 hours, which is what the form's own definition covers. Rejected answering No on the grounds that Forge storage is Atlassian-hosted: the form's second condition, keeping data longer than 24 hours, applies regardless.
+- The installation link is kept in the team's secrets folder and goes into the Devpost submission. It is not in the public README, so the team keeps control over who gets it until submission.
+- The second site, `drec-judge-test.atlassian.net`, was created through the Cloud Developer Bundle under the reviewer account, which is its only admin and belongs to a different organization from the app owner. No CAPTCHA or payment appeared. The link installed Jira and, with one tick, Confluence in the same dialog.
+- The README's judge steps were changed after the walk: step 1 now says to tick Confluence, which the install dialog leaves unticked.
+
+## Demo setup
+
+- The fixture script now runs with only Node.js (`node scripts/fixtures.mjs`, no `npm install`), asks for site, email and token when they are not set, hides the token, checks credentials and products before changing anything, and accepts FIXTURE_PROJECT_KEY. Rejected an in-app "load demo data" page: it would need write scopes for Jira and Confluence, which the read-only app does not have.
