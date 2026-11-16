@@ -50,8 +50,10 @@ test('added, removed, lost and regained pages make a record stale without naming
   assert.ok(texts.includes('1 page linked at your recorded check is no longer linked.'));
 });
 
-test('a record from an older format is ignored', () => {
-  assert.equal(compareWithRecord({ v: 0, pages: [] }, [], {}).state, 'none');
+test('a record from an older format is reported as stale, not misread', () => {
+  const r = compareWithRecord({ v: 1, pages: [], recordedAt: 't', overall: 'all-support' }, [], {});
+  assert.equal(r.state, 'stale');
+  assert.match(r.changes[0].text, /changed how it checks/);
 });
 
 // Review flow over a fake site and a Map store.
@@ -140,4 +142,46 @@ test('change notes sent to the panel carry no page ids', async () => {
   assert.equal(r.record.state, 'stale');
   assert.deepEqual(r.record.changes, ['A linked page you could read at your recorded check cannot be read now.']);
   assert.ok(!JSON.stringify(r.record).includes('"5"'));
+});
+
+test('rewording the issue summary makes a recorded check stale', async () => {
+  const store = mapStore();
+  const first = await loadReview(ctx('kaif'), site(1), store);
+  await recordReview(ctx('kaif'), site(1), store, first.fingerprintHash);
+  const reworded = site(1);
+  reworded.issue = async () => res(200, { key: 'DREC-1', fields: { summary: 'Rename the staging cluster' } });
+  const after = await loadReview(ctx('kaif'), reworded, store);
+  assert.equal(after.record.state, 'stale');
+  assert.ok(after.record.changes.includes('The issue summary changed since your recorded check.'));
+});
+
+test('a changed verdict on an unchanged page version is reported', () => {
+  const record = makeRecord({ checkedAt: 't', overall: 'all-support' }, fingerprintOf([ok('1', 3, 'supports')]), { summaryHash: 'a', rulesVersion: 3 });
+  const cmp = compareWithRecord(record, fingerprintOf([ok('1', 3, 'missing')]), { 1: 'P' }, { summaryHash: 'a', rulesVersion: 3 });
+  assert.equal(cmp.state, 'stale');
+  assert.match(cmp.changes[0].text, /has not changed, but its result has/);
+});
+
+test('a rules update and a change in unread links make a record stale', () => {
+  const record = makeRecord({ checkedAt: 't', overall: 'x' }, [], { summaryHash: 'a', rulesVersion: 2, unread: { unreadable: 0 } });
+  const cmp = compareWithRecord(record, [], {}, { summaryHash: 'a', rulesVersion: 3, unread: { unreadable: 1 } });
+  const texts = cmp.changes.map((c) => c.text);
+  assert.ok(texts.some((t) => /changed how it checks/.test(t)));
+  assert.ok(texts.some((t) => /cannot read have changed/.test(t)));
+});
+
+test('a current record names what was recorded and is not shown in green', async () => {
+  const store = mapStore();
+  const seen = await loadReview(ctx('kaif'), site(1), store);
+  const saved = await recordReview(ctx('kaif'), site(1), store, seen.fingerprintHash);
+  assert.equal(saved.record.appearance, 'default');
+  assert.match(saved.record.detail, /You recorded "Evidence found on every linked page"/);
+});
+
+test('without an account id nothing is read from or written to storage', async () => {
+  const store = mapStore();
+  const seen = await loadReview(ctx(undefined), site(1), store);
+  assert.equal(seen.canRecord, false);
+  await assert.rejects(recordReview(ctx(undefined), site(1), store, seen.fingerprintHash), { code: 'no-account' });
+  assert.equal(store.m.size, 0);
 });

@@ -22,7 +22,7 @@ const resolver = new Resolver();
 /** The calls the receipt needs, made as the current user. */
 const forgeHttp = {
   issue: (issueKey) =>
-    api.asUser().requestJira(route`/rest/api/3/issue/${issueKey}?fields=summary`, {
+    api.asUser().requestJira(route`/rest/api/3/issue/${issueKey}?fields=summary&expand=changelog`, {
       headers: { Accept: 'application/json' },
     }),
   remoteLinks: (issueKey) =>

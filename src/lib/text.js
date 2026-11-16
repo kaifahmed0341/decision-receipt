@@ -1,14 +1,7 @@
 /**
- * Converts a Confluence page body (storage format, which is XHTML with some
- * Confluence-specific tags) into plain text, then into sentences.
- *
- * The excerpts the panel shows are cut from this plain text without rewording, so a
- * reviewer can search the page for the same words.
+ * Text helpers: entity decoding, sentence splitting and Jira's document format.
+ * Page bodies are read by storage.js, which uses these.
  */
-
-// Tags that end a block of text. Each becomes a line break.
-const BLOCK_TAGS =
-  'p|div|h[1-6]|li|tr|td|th|blockquote|pre|ul|ol|table|section|ac:task|ac:layout-cell|ac:rich-text-body';
 
 const NAMED_ENTITIES = {
   amp: '&',
@@ -41,32 +34,14 @@ export function decodeEntities(text) {
   });
 }
 
-/**
- * Turns Confluence storage format into plain text lines.
- * Macro parameters (for example a code block's language) are dropped; macro bodies are kept.
- * @param {string} storage
- * @returns {string}
- */
-export function storageToText(storage) {
-  if (typeof storage !== 'string' || storage.length === 0) return '';
-  let s = storage;
-  s = s.replace(/<ac:parameter[^>]*>[\s\S]*?<\/ac:parameter>/gi, ' ');
-  s = s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, (_, inner) => inner.replace(/</g, '&lt;'));
-  s = s.replace(/<br\s*\/?>/gi, '\n');
-  s = s.replace(new RegExp(`</?(?:${BLOCK_TAGS})(?:\\s[^>]*)?>`, 'gi'), '\n');
-  s = s.replace(/<[^>]+>/g, '');
-  s = decodeEntities(s);
-  s = s.replace(/[ \t ]+/g, ' ');
-  return s
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .join('\n');
-}
+const ABBREVIATIONS = /(?:\b(?:e\.g|i\.e|etc|vs|approx|incl|no|nr|mr|ms|mrs|dr|st|fig|cf|al)\.)$/i;
+// A short labelled verdict such as "Decision: go." belongs with the sentence after it.
+const LABEL_ONLY = /^(?:decision|decided|outcome|status|agreed|approved|resolution)\s*:\s*[\w-]+\.$/i;
 
 /**
  * Splits plain text into sentences. Each line is split on ". ", "! " and "? " so a
- * heading or list item stays one unit. Abbreviations such as "e.g." are kept whole.
+ * heading or list item stays one unit. Abbreviations such as "e.g." are kept whole, and
+ * a short label such as "Decision: go." stays with the sentence after it.
  * @param {string} text
  * @returns {string[]}
  */
@@ -76,10 +51,15 @@ export function splitSentences(text) {
   for (const line of text.split('\n')) {
     // Split after sentence punctuation followed by a space and an upper-case letter, digit or quote.
     const parts = line.split(/(?<=[.!?])\s+(?=["'(A-Z0-9])/);
+    const merged = [];
     for (const part of parts) {
       const trimmed = part.trim();
-      if (trimmed) out.push(trimmed);
+      if (!trimmed) continue;
+      const prev = merged[merged.length - 1];
+      if (prev && (ABBREVIATIONS.test(prev) || LABEL_ONLY.test(prev))) merged[merged.length - 1] = `${prev} ${trimmed}`;
+      else merged.push(trimmed);
     }
+    out.push(...merged);
   }
   return out;
 }

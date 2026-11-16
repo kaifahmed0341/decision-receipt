@@ -15,7 +15,7 @@
  */
 
 import { confluencePagesFromLinks } from './links.js';
-import { storageToText, splitSentences } from './text.js';
+import { parseStorage } from './storage.js';
 import { classifyPage, overallVerdict } from './classify.js';
 import { okPageEvidence, problemPageEvidence, linkNotes, OVERALL, formatUtc } from './evidence.js';
 import { fingerprintOf } from './staleness.js';
@@ -51,19 +51,47 @@ export function retryDelayMs(res, attempt) {
 }
 
 /**
- * Calls `request` and retries on 429 and 503, waiting as the server asks.
+ * Calls `request` and retries on 429 and 503, waiting as the server asks. A wait that
+ * would end after `deadline` (milliseconds since the epoch) is skipped and the last
+ * answer returned, so retries cannot push the resolver past its time limit.
  * Errors thrown by the request itself (for example the platform asking the user to
  * grant access) are not caught here; they must reach the platform unchanged.
  * @param {() => Promise<HttpResponse>} request
  * @param {Http} http
+ * @param {number} [deadline]
  */
-export async function withRetry(request, http) {
+export async function withRetry(request, http, deadline = Infinity) {
   let res = await request();
   for (let attempt = 0; attempt < MAX_RETRIES && RETRYABLE.has(res.status); attempt += 1) {
-    await http.sleep(retryDelayMs(res, attempt));
+    const wait = retryDelayMs(res, attempt);
+    if (http.now().getTime() + wait > deadline) break;
+    await http.sleep(wait);
     res = await request();
   }
   return res;
+}
+
+/**
+ * The link the panel shows for a page: built from the site and the page that was read,
+ * never from the Jira link's own URL.
+ */
+export function pageUrl(body, pageId, siteHost) {
+  const base = siteHost ? `https://${siteHost}/wiki` : '/wiki';
+  const webui = body?._links?.webui;
+  if (typeof webui === 'string' && /^\/[^/\\]/.test(webui)) return `${base}${webui}`;
+  return `${base}/pages/viewpage.action?pageId=${encodeURIComponent(pageId)}`;
+}
+
+/** Earlier keys of an issue, from the "Key" entries of its change history. */
+export function previousKeysOf(issueBody) {
+  const keys = new Set();
+  for (const h of issueBody?.changelog?.histories || []) {
+    for (const item of h.items || []) {
+      if (String(item.field).toLowerCase() === 'key' && item.fromString) keys.add(String(item.fromString));
+    }
+  }
+  keys.delete(issueBody?.key);
+  return [...keys];
 }
 
 /**
@@ -72,10 +100,10 @@ export async function withRetry(request, http) {
  * @param {{key: string, summary: string}} issue
  * @param {Http} http
  */
-export async function checkPage(link, issue, http) {
+export async function checkPage(link, issue, http, { siteHost = null, deadline = Infinity } = {}) {
   let res;
   try {
-    res = await withRetry(() => http.confluencePage(link.pageId), http);
+    res = await withRetry(() => http.confluencePage(link.pageId), http, deadline);
   } catch (err) {
     // The platform asking the user to grant access must reach Forge unchanged.
     if (isPlatformAuthError(err)) throw err;
@@ -94,11 +122,11 @@ export async function checkPage(link, issue, http) {
   const body = await res.json();
   if (body.status && body.status !== 'current') return problemPageEvidence('not-current', retrievedAt);
 
-  const text = storageToText(body?.body?.storage?.value || '');
-  const result = classifyPage(splitSentences(text), issue);
+  const units = parseStorage(body?.body?.storage?.value || '', body.title);
+  const result = classifyPage(units, issue);
   return okPageEvidence({
     issue,
-    link,
+    link: { pageId: link.pageId, url: pageUrl(body, link.pageId, siteHost) },
     page: {
       title: body.title,
       version: body?.version?.number,
@@ -132,6 +160,7 @@ export function isPlatformAuthError(err) {
  */
 export async function buildReceipt(issueKey, siteHost, http, { budgetMs = TIME_BUDGET_MS } = {}) {
   const started = http.now().getTime();
+  const deadline = started + budgetMs;
   if (!/^[A-Z][A-Z0-9_]+-\d+$/.test(issueKey || '')) {
     throw new ReceiptError('bad-issue', 'The panel could not tell which issue it is on.');
   }
@@ -145,7 +174,11 @@ export async function buildReceipt(issueKey, siteHost, http, { budgetMs = TIME_B
   }
   if (issueRes.status !== 200) throw new ReceiptError('jira-error', `Jira returned an error (${issueRes.status}).`);
   const issueBody = await issueRes.json();
-  const issue = { key: issueBody.key || issueKey, summary: issueBody?.fields?.summary || '' };
+  const issue = {
+    key: issueBody.key || issueKey,
+    summary: issueBody?.fields?.summary || '',
+    previousKeys: previousKeysOf(issueBody),
+  };
 
   const linksRes = await withRetry(() => http.remoteLinks(issueKey), http);
   if (RETRYABLE.has(linksRes.status)) {
@@ -163,17 +196,17 @@ export async function buildReceipt(issueKey, siteHost, http, { budgetMs = TIME_B
   const fingerprint = [];
   for (const link of links) {
     const evidence =
-      http.now().getTime() - started > budgetMs
+      http.now().getTime() > deadline
         ? problemPageEvidence('timed-out', http.now().toISOString())
-        : await checkPage(link, issue, http);
+        : await checkPage(link, issue, http, { siteHost, deadline });
     pages.push(evidence);
     fingerprint.push(...fingerprintOf([{ ...evidence, pageId: link.pageId }]));
   }
 
-  const overall = overallVerdict(pages);
+  const overall = overallVerdict(pages, counts);
   const checkedAt = http.now().toISOString();
   const receipt = {
-    issue,
+    issue: { key: issue.key, summary: issue.summary },
     checkedAt,
     checkedAtLabel: formatUtc(checkedAt),
     overall,
@@ -183,5 +216,5 @@ export async function buildReceipt(issueKey, siteHost, http, { budgetMs = TIME_B
     pages,
     notes: linkNotes(counts),
   };
-  return { receipt, fingerprint };
+  return { receipt, fingerprint, summary: issue.summary, unread: counts };
 }

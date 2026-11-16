@@ -10,7 +10,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { summaryTerms, relevance, classifySentence } from '../src/lib/classify.js';
+import { prepareTask, relevance, classifySentence, statusKind } from '../src/lib/classify.js';
 
 // Default: the development set (both files). Pass one or more JSON files to score others.
 const given = process.argv.filter((a) => a.endsWith('.json'));
@@ -25,10 +25,20 @@ for (const f of files) {
 }
 const LABELS = ['support', 'conflict', 'mention', 'irrelevant'];
 
+// A labelled excerpt stands alone, so a bare status line ("Status: Approved") is taken to
+// sit in a section about its task, as it would on the task's own decision page.
 export function predict(text, issueKey, summary) {
-  const rel = relevance(text, issueKey, summaryTerms(summary));
+  const task = prepareTask({ key: issueKey, summary });
+  const status = text.match(/^(?:status|outcome|decision status|resolution)\s*[:-]\s*(.+)$/i);
+  if (status && statusKind(status[1])) {
+    const k = statusKind(status[1]);
+    return k === 'open' ? 'mention' : k === 'support' ? 'support' : 'conflict';
+  }
+  const rel = relevance(text, task.keys, task.terms, task.object);
   if (!rel.relevant) return 'irrelevant';
-  return classifySentence(text).kind;
+  const out = classifySentence(text, task);
+  if (rel.reason === 'object' && out.kind === 'mention' && !out.cue) return 'irrelevant';
+  return out.kind;
 }
 
 const rows = data.excerpts.map((e) => {

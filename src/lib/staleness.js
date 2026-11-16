@@ -14,8 +14,15 @@
  * stale. A stale record stays stale until the reviewer records a fresh check.
  */
 
-/** Bump when the record shape changes, so old records are ignored rather than misread. */
-export const RECORD_VERSION = 1;
+import { createHash } from 'crypto';
+
+/** Bump when the record shape changes. Older records are reported as stale, never misread. */
+export const RECORD_VERSION = 2;
+
+/** A short hash of the issue summary, so a record notices when the task is reworded. */
+export function summaryHash(summary) {
+  return createHash('sha256').update(String(summary || '')).digest('hex').slice(0, 16);
+}
 
 /**
  * The storage key for one user's record of one issue on one site.
@@ -49,14 +56,23 @@ export function fingerprintString(fingerprint) {
  * Builds the record to store.
  * @param {{checkedAt: string, overall: string}} receipt
  * @param {Array} fingerprint
+ * @param {{summaryHash: string, rulesVersion: number, unread: object}} context
  */
-export function makeRecord(receipt, fingerprint) {
+export function makeRecord(receipt, fingerprint, context = {}) {
   return {
     v: RECORD_VERSION,
     recordedAt: receipt.checkedAt,
     overall: receipt.overall,
+    summaryHash: context.summaryHash ?? null,
+    rulesVersion: context.rulesVersion ?? null,
+    unread: unreadCounts(context.unread),
     pages: fingerprint,
   };
+}
+
+/** The counts of links the panel could not read, in a fixed shape. */
+export function unreadCounts(u = {}) {
+  return { otherSite: u?.otherSite || 0, unreadable: u?.unreadable || 0, skipped: u?.skipped || 0 };
 }
 
 const WAS = { supports: 'supported the task', conflicts: 'conflicted with the task', missing: 'stated no decision' };
@@ -68,10 +84,19 @@ const IS = { supports: 'supports the task', conflicts: 'conflicts with the task'
  * @param {object|undefined} record what was stored, or undefined
  * @param {Array} current fingerprint of the current check
  * @param {Object<string, string>} titles page id to title, only for pages the viewer can read now
- * @returns {{state: 'none'|'current'|'stale', recordedAt?: string, changes: Array<{pageId: string|null, text: string}>}}
+ * @param {{summaryHash?: string, rulesVersion?: number, unread?: object}} [context] the current check's context
+ * @returns {{state: 'none'|'current'|'stale', recordedAt?: string, recordedOverall?: string, changes: Array<{pageId: string|null, text: string}>}}
  */
-export function compareWithRecord(record, current, titles) {
-  if (!record || record.v !== RECORD_VERSION || !Array.isArray(record.pages)) return { state: 'none', changes: [] };
+export function compareWithRecord(record, current, titles, context = {}) {
+  if (!record || !Array.isArray(record.pages)) return { state: 'none', changes: [] };
+  if (record.v !== RECORD_VERSION) {
+    return {
+      state: 'stale',
+      recordedAt: record.recordedAt,
+      recordedOverall: record.overall,
+      changes: [{ pageId: null, text: 'The app changed how it checks pages since your recorded check.' }],
+    };
+  }
 
   const before = new Map(record.pages.map((p) => [p.pageId, p]));
   const now = new Map(current.map((p) => [p.pageId, p]));
@@ -92,6 +117,12 @@ export function compareWithRecord(record, current, titles) {
           text += ` Before, it ${WAS[old.verdict] || 'had another result'}. Now it ${IS[cur.verdict] || 'has another result'}.`;
         }
         changes.push({ pageId: id, text });
+      } else if (old.verdict !== cur.verdict) {
+        // Same page version, different result: the task or the rules changed.
+        changes.push({
+          pageId: id,
+          text: `${name(id)} has not changed, but its result has. Before, it ${WAS[old.verdict] || 'had another result'}. Now it ${IS[cur.verdict] || 'has another result'}.`,
+        });
       }
     } else if (old.status === 'ok' && cur.status !== 'ok') {
       changes.push({ pageId: id, text: 'A linked page you could read at your recorded check cannot be read now.' });
@@ -107,5 +138,19 @@ export function compareWithRecord(record, current, titles) {
     });
   }
 
-  return { state: changes.length ? 'stale' : 'current', recordedAt: record.recordedAt, changes };
+  if (context.summaryHash && record.summaryHash && context.summaryHash !== record.summaryHash) {
+    changes.unshift({ pageId: null, text: 'The issue summary changed since your recorded check.' });
+  }
+  if (context.rulesVersion && record.rulesVersion && context.rulesVersion !== record.rulesVersion) {
+    changes.push({ pageId: null, text: 'The app changed how it checks pages since your recorded check.' });
+  }
+  if (context.unread) {
+    const a = unreadCounts(record.unread);
+    const b = unreadCounts(context.unread);
+    if (a.otherSite !== b.otherSite || a.unreadable !== b.unreadable || a.skipped !== b.skipped) {
+      changes.push({ pageId: null, text: 'The links the panel cannot read have changed since your recorded check.' });
+    }
+  }
+
+  return { state: changes.length ? 'stale' : 'current', recordedAt: record.recordedAt, recordedOverall: record.overall, changes };
 }

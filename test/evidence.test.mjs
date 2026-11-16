@@ -20,12 +20,21 @@ test('times are shown in UTC with seconds', () => {
 });
 
 test('each finding explains why it was picked', () => {
-  assert.equal(explainFinding({ reason: 'key', cue: 'agreed', matchedTerms: [] }, 'DREC-2'), 'Names DREC-2. Phrase: "agreed".');
-  assert.equal(explainFinding({ reason: 'status', cue: null, matchedTerms: [] }, 'X-1'), 'Page status line. No decision phrase.');
+  assert.equal(explainFinding({ reason: 'key', cue: 'phrase "agreed"', matchedTerms: [] }, 'DREC-2'), 'Names DREC-2. Rule: phrase "agreed".');
+  assert.equal(explainFinding({ reason: 'status', cue: 'status "DECIDED"', matchedTerms: [], section: 'DREC-1 export', unitKind: 'text' }, 'X-1'), 'Status for the section "DREC-1 export". Rule: status "DECIDED".');
+  assert.equal(explainFinding({ reason: 'key', cue: 'open task, not done', matchedTerms: [], unitKind: 'task' }, 'X-1'), 'Task. Names X-1. Rule: open task, not done.');
   assert.equal(
     explainFinding({ reason: 'terms', cue: 'question', matchedTerms: ['invoice', 'pdf'] }, 'X-1'),
     'Uses the summary words invoice, pdf. Asked as a question, so not a decision.'
   );
+});
+
+test('a long excerpt is cut around the deciding phrase', () => {
+  const long = 'DREC-1 ' + 'was discussed at length with every team and their concerns were recorded '.repeat(6) + 'and it was rejected.';
+  const cut = excerptOf(long, 'phrase "rejected"');
+  assert.equal(cut.truncated, true);
+  assert.ok(cut.text.includes('rejected'));
+  assert.ok(cut.text.startsWith('...'));
 });
 
 test('excerpts keep the exact words and mark a cut', () => {

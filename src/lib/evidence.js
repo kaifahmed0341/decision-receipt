@@ -84,12 +84,12 @@ export const OVERALL = {
   'all-support': {
     label: 'Evidence found on every linked page',
     appearance: 'success',
-    detail: 'Each linked page contains a sentence that supports this task. Read the excerpts; this panel does not approve work.',
+    detail: 'Every link was read, and each linked page contains something that supports this task. Read the excerpts; this panel does not approve work.',
   },
   incomplete: {
     label: 'Evidence incomplete',
     appearance: 'moved',
-    detail: 'Some linked pages support this task, but others do not state the decision or could not be checked.',
+    detail: 'Some linked pages support this task, but others do not state the decision, could not be read, or were not checked.',
   },
   missing: {
     label: 'Missing evidence',
@@ -117,23 +117,39 @@ const KIND_ORDER = { conflict: 0, support: 1, mention: 2 };
  * @param {string} issueKey
  */
 export function explainFinding(finding, issueKey) {
+  const where = {
+    row: 'Table row',
+    task: 'Task',
+    decision: 'Decision item',
+  }[finding.unitKind];
   let why;
   if (finding.reason === 'key') why = `Names ${issueKey}`;
-  else if (finding.reason === 'status') why = 'Page status line';
+  else if (finding.reason === 'status') why = finding.section ? `Status for the section "${finding.section}"` : 'Status for this page';
+  else if (finding.reason === 'object') why = `Names the task's subject (${finding.matchedTerms.join(', ')})`;
   else why = `Uses the summary words ${finding.matchedTerms.join(', ')}`;
+  if (where) why = `${where}. ${why}`;
   if (finding.cue === 'question') return `${why}. Asked as a question, so not a decision.`;
-  if (finding.cue) return `${why}. Phrase: "${finding.cue}".`;
+  if (finding.cue) return `${why}. Rule: ${finding.cue}.`;
   return `${why}. No decision phrase.`;
 }
 
 /**
- * Cuts an excerpt to MAX_EXCERPT_CHARS without changing the words that remain.
+ * Cuts an excerpt to MAX_EXCERPT_CHARS without changing the words that remain. When the
+ * sentence is too long, the window is centred on the phrase that decided it, so the
+ * reader always sees that phrase.
  * @param {string} sentence
+ * @param {string|null} [cue] the finding's cue; its first quoted phrase is looked for
  * @returns {{text: string, truncated: boolean}}
  */
-export function excerptOf(sentence) {
+export function excerptOf(sentence, cue = null) {
   if (sentence.length <= MAX_EXCERPT_CHARS) return { text: sentence, truncated: false };
-  return { text: `${sentence.slice(0, MAX_EXCERPT_CHARS).trimEnd()}...`, truncated: true };
+  const phrase = cue ? (cue.match(/"([^"]+)"/) || [null, cue])[1] : null;
+  const at = phrase ? sentence.toLowerCase().indexOf(phrase.toLowerCase()) : -1;
+  let start = 0;
+  if (at >= 0) start = Math.max(0, Math.min(sentence.length - MAX_EXCERPT_CHARS, at - Math.floor((MAX_EXCERPT_CHARS - phrase.length) / 2)));
+  const end = start + MAX_EXCERPT_CHARS;
+  const text = `${start > 0 ? '...' : ''}${sentence.slice(start, end).trim()}${end < sentence.length ? '...' : ''}`;
+  return { text, truncated: true };
 }
 
 /**
@@ -150,7 +166,7 @@ export function okPageEvidence({ issue, link, page, retrievedAt, result }) {
   const verdict = PAGE_VERDICTS[result.verdict];
   const sorted = [...result.findings].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
   const excerpts = sorted.slice(0, MAX_EXCERPTS_PER_PAGE).map((f) => {
-    const { text, truncated } = excerptOf(f.sentence);
+    const { text, truncated } = excerptOf(f.sentence, f.cue);
     return { text, truncated, kind: f.kind, kindLabel: KIND_LABELS[f.kind], why: explainFinding(f, issue.key) };
   });
   return {
@@ -201,7 +217,7 @@ export function linkNotes({ otherSite, unreadable, skipped }) {
   const notes = [];
   const plural = (n, one, many) => (n === 1 ? one : many);
   if (otherSite) notes.push(`${otherSite} ${plural(otherSite, 'link points', 'links point')} to another site and ${plural(otherSite, 'was', 'were')} not checked.`);
-  if (unreadable) notes.push(`${unreadable} Confluence ${plural(unreadable, 'link has', 'links have')} no page id the app can read, such as a short link. Link the full page instead.`);
+  if (unreadable) notes.push(`${unreadable} Confluence ${plural(unreadable, 'link was', 'links were')} not checked: a short link, a link without a proper address, or a link whose page id and address disagree. Link the full page instead.`);
   if (skipped) notes.push(`${skipped} more linked ${plural(skipped, 'page was', 'pages were')} not checked. The panel checks the first 10 pages.`);
   return notes;
 }

@@ -95,16 +95,18 @@ const PageEvidence = ({ page, index }) => {
 };
 
 /** Whether this reviewer's recorded check still matches the pages, and the record button. */
-const RecordBanner = ({ record, onRecord, recording, note }) => (
+const RecordBanner = ({ record, onRecord, recording, note, canRecord }) => (
   <Box xcss={pageBox}>
     <Stack space="space.100">
       <Inline space="space.100" alignBlock="center" spread="space-between">
         <Lozenge appearance={record.appearance} isBold maxWidth={360}>
           {record.label}
         </Lozenge>
-        <LoadingButton appearance="primary" isLoading={recording} onClick={onRecord}>
-          {record.state === 'stale' ? 'Record a fresh check' : 'Record this check'}
-        </LoadingButton>
+        {canRecord ? (
+          <LoadingButton appearance="primary" isLoading={recording} onClick={onRecord}>
+            {record.state === 'stale' ? 'Record a fresh check' : 'Record this check'}
+          </LoadingButton>
+        ) : null}
       </Inline>
       <Text>{record.detail}</Text>
       {record.changes.length ? (
@@ -199,7 +201,7 @@ const App = () => {
           at {receipt.checkedAtLabel}. Nothing in Jira or Confluence is changed.
         </Text>
       </Stack>
-      <RecordBanner record={recordState} onRecord={record} recording={recording} note={note} />
+      <RecordBanner record={recordState} onRecord={record} recording={recording} note={note} canRecord={result.canRecord !== false} />
       {receipt.notes.map((linkNote, i) => (
         <SectionMessage key={i} appearance="information">
           <Text>{linkNote}</Text>

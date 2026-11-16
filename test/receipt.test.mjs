@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildReceipt, checkPage, withRetry, retryDelayMs, ReceiptError, MAX_WAIT_MS } from '../src/lib/receipt.js';
+import { buildReceipt, checkPage, withRetry, retryDelayMs, ReceiptError, MAX_WAIT_MS, pageUrl, previousKeysOf } from '../src/lib/receipt.js';
 
 const SITE = 'demo.atlassian.net';
 const res = (status, body, headers = {}) => ({
@@ -152,4 +152,38 @@ test('the fingerprint keeps hidden page ids on the server side only', async () =
   const { receipt, fingerprint } = await buildReceipt('DREC-1', SITE, http);
   assert.equal(fingerprint[0].pageId, '7');
   assert.ok(!JSON.stringify(receipt).includes('"7"'));
+});
+
+test('the page link is built from the page read, never from the Jira link URL', async () => {
+  const spoof = { id: 9, globalId: 'appId=x&pageId=5', application: { type: 'com.atlassian.confluence' }, object: { url: '//evil.example/phish' } };
+  const good = { id: 10, globalId: 'appId=x&pageId=5', application: { type: 'com.atlassian.confluence' }, object: { url: `https://${SITE}/wiki/spaces/D/pages/5/Whatever` } };
+  const body = { ...page('5', 'Council', '<p>DREC-1 approved.</p>'), _links: { webui: '/spaces/D/pages/5/Council' } };
+  const http = fakeHttp({ links: res(200, [spoof, good]), pages: { 5: res(200, body) } });
+  const { receipt } = await buildReceipt('DREC-1', SITE, http);
+  assert.equal(receipt.pages.length, 1);
+  assert.equal(receipt.pages[0].url, `https://${SITE}/wiki/spaces/D/pages/5/Council`);
+  assert.ok(!JSON.stringify(receipt).includes('evil.example'));
+  assert.equal(receipt.overall, 'incomplete', 'an untrusted link keeps the headline from going green');
+});
+
+test('without a webui path the link falls back to the page id on this site', () => {
+  assert.equal(pageUrl({}, '42', SITE), `https://${SITE}/wiki/pages/viewpage.action?pageId=42`);
+  assert.equal(pageUrl({ _links: { webui: '//evil.example/x' } }, '42', SITE), `https://${SITE}/wiki/pages/viewpage.action?pageId=42`);
+});
+
+test('a retry wait that would cross the deadline is skipped', async () => {
+  const http = fakeHttp();
+  let calls = 0;
+  const out = await withRetry(async () => { calls += 1; return res(429, {}, { 'retry-after': '4' }); }, http, Date.parse('2026-11-16T12:00:02Z'));
+  assert.equal(out.status, 429);
+  assert.equal(calls, 1);
+  assert.deepEqual(http.calls.sleeps, []);
+});
+
+test('earlier keys from the change history still match pages that use them', async () => {
+  const issue = res(200, { key: 'PLAT-44', fields: { summary: 'x' }, changelog: { histories: [{ items: [{ field: 'Key', fromString: 'DREC-1', toString: 'PLAT-44' }] }] } });
+  assert.deepEqual(previousKeysOf({ key: 'PLAT-44', changelog: { histories: [{ items: [{ field: 'Key', fromString: 'DREC-1' }] }] } }), ['DREC-1']);
+  const http = fakeHttp({ issue, links: res(200, [link('5')]), pages: { 5: res(200, page('5', 'Old', '<p>DREC-1 approved.</p>')) } });
+  const { receipt } = await buildReceipt('PLAT-44', SITE, http);
+  assert.equal(receipt.overall, 'all-support');
 });

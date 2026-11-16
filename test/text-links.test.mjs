@@ -1,16 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { storageToText, splitSentences, decodeEntities, adfToText } from '../src/lib/text.js';
-import { pageIdFromGlobalId, pageIdFromUrl, confluencePagesFromLinks } from '../src/lib/links.js';
+import { splitSentences, decodeEntities, adfToText } from '../src/lib/text.js';
+import { pageIdFromGlobalId, pageIdFromUrl, confluencePagesFromLinks, linkTarget } from '../src/lib/links.js';
 
-test('storage format becomes plain lines with entities decoded', () => {
-  const storage =
-    '<h2>Decision</h2><p>We&rsquo;ll keep <strong>v2</strong> &amp; drop v1.</p>' +
-    '<ac:structured-macro ac:name="info"><ac:parameter ac:name="title">Hidden param</ac:parameter>' +
-    '<ac:rich-text-body><p>Inside a macro.</p></ac:rich-text-body></ac:structured-macro><ul><li>One</li><li>Two</li></ul>';
-  assert.equal(storageToText(storage), "Decision\nWe'll keep v2 & drop v1.\nInside a macro.\nOne\nTwo");
-  assert.equal(storageToText(''), '');
-  assert.equal(decodeEntities('&#39;&#x41;&unknown;'), "'A&unknown;");
+test('entities decode', () => {
+  assert.equal(decodeEntities('&#39;&#x41;&unknown;&amp;'), "'A&unknown;&");
 });
 
 test('sentences split on end punctuation but keep lines and abbreviations whole', () => {
@@ -20,7 +14,8 @@ test('sentences split on end punctuation but keep lines and abbreviations whole'
     'Third?',
     'Heading line',
   ]);
-  assert.deepEqual(splitSentences('Use e.g. the v2 API. Then stop.'), ['Use e.g. the v2 API.', 'Then stop.']);
+  assert.deepEqual(splitSentences('Use e.g. The v2 API. Then stop.'), ['Use e.g. The v2 API.', 'Then stop.']);
+  assert.deepEqual(splitSentences('Decision: go. Raise the limit.'), ['Decision: go. Raise the limit.']);
 });
 
 test('ADF text extraction keeps paragraphs apart', () => {
@@ -64,4 +59,27 @@ test('at most maxPages pages are checked', () => {
   const r = confluencePagesFromLinks(links, 'x.atlassian.net', 3);
   assert.equal(r.pages.length, 3);
   assert.equal(r.skipped, 1);
+});
+
+test('links without a proper host, or whose ids disagree, are not trusted', () => {
+  const site = 's.atlassian.net';
+  assert.equal(linkTarget('//evil.example/phish', site), 'bad');
+  assert.equal(linkTarget('/\\evil.example/wiki/x', site), 'bad');
+  assert.equal(linkTarget('javascript:alert(1)//wiki/', site), 'bad');
+  assert.equal(linkTarget('/wiki/spaces/A/pages/1', site), 'site');
+  assert.equal(linkTarget('https://s.atlassian.net/wiki/x', site), 'site');
+  assert.equal(linkTarget('https://evil.example.atlassian.net.example/x', site), 'other');
+  const conf = { type: 'com.atlassian.confluence' };
+  const r = confluencePagesFromLinks(
+    [
+      { application: conf, globalId: 'appId=x&pageId=100', object: { url: '//evil.example/phish' } },
+      { application: conf, globalId: 'appId=x&pageId=100', object: { url: 'https://s.atlassian.net/wiki/spaces/A/pages/999/Other' } },
+      { application: conf, globalId: 'appId=x&pageId=101', object: { url: 'javascript:alert(1)//wiki/' } },
+      { application: conf, globalId: 'appId=x&pageId=102', object: { url: 'https://s.atlassian.net/wiki/spaces/A/pages/102' } },
+    ],
+    site
+  );
+  assert.deepEqual(r.pages.map((p) => p.pageId), ['102']);
+  assert.equal(r.unreadable, 3);
+  assert.equal(r.pages[0].url, undefined, 'the Jira link URL is not carried to the panel');
 });

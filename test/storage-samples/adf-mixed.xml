@@ -1,0 +1,14 @@
+<h2>DREC-1 remove CSV export</h2><p>Status: <ac:structured-macro ac:name="status" ac:schema-version="1" ac:macro-id="s1"><ac:parameter ac:name="title">DECIDED</ac:parameter><ac:parameter ac:name="colour">Green</ac:parameter></ac:structured-macro></p><ac:adf-extension><ac:adf-node type="decision-list"><ac:adf-attribute key="local-id">dl1</ac:adf-attribute><ac:adf-node type="decision-item"><ac:adf-attribute key="local-id">di1</ac:adf-attribute><ac:adf-attribute key="state">DECIDED</ac:adf-attribute><ac:adf-content>DREC-1 rejected, keep the endpoint</ac:adf-content></ac:adf-node></ac:adf-node><ac:adf-fallback><ul class="decision-list"><li>DREC-1 rejected, keep the endpoint</li></ul></ac:adf-fallback></ac:adf-extension><ac:task-list ac:task-list-id="tl1">
+<ac:task>
+<ac:task-id>1</ac:task-id>
+<ac:task-uuid>t1</ac:task-uuid>
+<ac:task-status>complete</ac:task-status>
+<ac:task-body><span class="placeholder-inline-tasks">DREC-1 approved by the API council</span></ac:task-body>
+</ac:task>
+<ac:task>
+<ac:task-id>2</ac:task-id>
+<ac:task-uuid>t2</ac:task-uuid>
+<ac:task-status>incomplete</ac:task-status>
+<ac:task-body><span class="placeholder-inline-tasks">Approve DREC-2</span></ac:task-body>
+</ac:task>
+</ac:task-list><table data-layout="default"><tbody><tr><th><p>Issue</p></th><th><p>Decision</p></th><th><p>Outcome</p></th></tr><tr><td><p>DREC-1</p></td><td><p>Remove the v1 CSV export endpoint</p></td><td><p>Approved</p></td></tr></tbody></table><p><del>DREC-1 approved.</del></p><p><ac:placeholder>DREC-1 approved placeholder</ac:placeholder></p><ac:structured-macro ac:name="expand" ac:schema-version="1" ac:macro-id="094be3af-d733-4565-be7d-633ccc2d1735"><ac:parameter ac:name="title">Details</ac:parameter><ac:rich-text-body><p>Inside an expand.</p></ac:rich-text-body></ac:structured-macro>
