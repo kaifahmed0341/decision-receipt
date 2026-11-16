@@ -1,11 +1,11 @@
 modules:
   jira:issuePanel:
-    - key: decision-receipt-hello-world-issue-panel
+    - key: decision-receipt-panel
       resource: main
       resolver:
         function: resolver
       render: native
-      title: decision-receipt
+      title: Decision receipt
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
   function:
     - key: resolver
@@ -13,9 +13,21 @@ modules:
 resources:
   - key: main
     path: src/frontend/index.jsx
+permissions:
+  scopes:
+    # Read the issue summary and its remote links, as the current user.
+    - read:jira-work
+    # Read a Confluence page body and version, as the current user (REST v2 GET /pages/{id}).
+    - read:page:confluence
 app:
   runtime:
     name: nodejs24.x
     memoryMB: 256
     architecture: arm64
   id: ari:cloud:ecosystem::app/a6c7992f-da45-443e-ab7f-88cbffdd967b
+  # Jira hosts the panel. Confluence is connected so the panel can read pages as the user.
+  compatibility:
+    jira:
+      required: true
+    confluence:
+      required: false
