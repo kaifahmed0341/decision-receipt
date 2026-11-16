@@ -256,7 +256,10 @@ export function classifySentence(sentence, task = { action: null }) {
 export function prepareTask(issue) {
   const keys = [issue.key, ...(issue.previousKeys || [])].filter(Boolean);
   const action = taskAction(issue.summary);
-  return { keys, terms: summaryTerms(issue.summary), action, object: taskObject(issue.summary, action) };
+  // Stem to the summary's own word, so explanations read "invoice", not "invoic".
+  const words = {};
+  for (const raw of String(issue.summary || '').split(/[^A-Za-z0-9]+/)) if (raw && !words[stem(raw)]) words[stem(raw)] = raw.toLowerCase();
+  return { keys, terms: summaryTerms(issue.summary), action, object: taskObject(issue.summary, action), words };
 }
 
 /** Reads a status value: support, conflict, open (not decided) or null (not a status). */
@@ -320,7 +323,15 @@ export function classifyPage(units, issue) {
   const task = prepareTask(issue);
   const findings = [];
   const add = (unit, sentence, kind, cue, reason, matchedTerms = []) =>
-    findings.push({ sentence, kind, cue, reason, matchedTerms, unitKind: unit.kind, section: unit.heading || '' });
+    findings.push({
+      sentence,
+      kind,
+      cue,
+      reason,
+      matchedTerms: matchedTerms.map((t) => task.words[t] || t),
+      unitKind: unit.kind,
+      section: unit.heading || '',
+    });
 
   const inScope = (unit, u) => {
     if (u === unit) return false;
