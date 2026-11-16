@@ -20,13 +20,6 @@ modules:
         - list-linked-decisions
         - get-page-evidence
         - explain-page-label
-  rovo:mcp:
-    - key: decision-receipt-mcp
-      name: Decision receipt
-      tools:
-        - list-linked-decisions
-        - get-page-evidence
-        - explain-page-label
   action:
     - key: list-linked-decisions
       name: List linked decisions

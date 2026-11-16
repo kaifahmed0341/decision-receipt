@@ -12,6 +12,10 @@ import { issueKeyFrom, receiptSummary, pageEvidence, explainPage, RECEIPT_NOTICE
 
 /** Runs an action and turns known problems into a plain answer for the agent. */
 async function run(payload, context, work) {
+  // Answers carry the reader's own access, so they are only given to a signed-in user.
+  if (!(context?.accountId || context?.principal?.accountId)) {
+    return { notice: RECEIPT_NOTICE, error: 'Decision receipt answers only a signed-in user, because it reads pages with that user\'s access.' };
+  }
   const issueKey = issueKeyFrom(payload);
   if (!issueKey) return { notice: RECEIPT_NOTICE, error: 'Name a Jira issue key, for example DREC-2, or ask from an open issue.' };
   try {
