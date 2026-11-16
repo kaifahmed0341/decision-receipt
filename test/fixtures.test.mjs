@@ -33,7 +33,7 @@ ISSUES.forEach((issue, index) => {
       now: () => new Date('2026-11-16T12:00:00Z'),
       sleep: async () => {},
     };
-    const receipt = await buildReceipt(key, SITE, http);
+    const { receipt } = await buildReceipt(key, SITE, http);
     assert.equal(receipt.overall, issue.expected);
     for (const [local, verdict] of Object.entries(issue.pageVerdicts)) {
       const p = receipt.pages.find((x) => x.pageId === ids[local]);

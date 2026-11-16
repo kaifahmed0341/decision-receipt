@@ -18,10 +18,14 @@ import { confluencePagesFromLinks } from './links.js';
 import { storageToText, splitSentences } from './text.js';
 import { classifyPage, overallVerdict } from './classify.js';
 import { okPageEvidence, problemPageEvidence, linkNotes, OVERALL, formatUtc } from './evidence.js';
+import { fingerprintOf } from './staleness.js';
 
 // How often a rate-limited or briefly unavailable request is retried, and the longest wait.
 export const MAX_RETRIES = 2;
 export const MAX_WAIT_MS = 4000;
+
+// Resolvers have about 25 seconds. No new page read starts after this many milliseconds.
+export const TIME_BUDGET_MS = 18000;
 
 // Statuses that mean "try again shortly".
 const RETRYABLE = new Set([429, 503]);
@@ -69,7 +73,16 @@ export async function withRetry(request, http) {
  * @param {Http} http
  */
 export async function checkPage(link, issue, http) {
-  const res = await withRetry(() => http.confluencePage(link.pageId), http);
+  let res;
+  try {
+    res = await withRetry(() => http.confluencePage(link.pageId), http);
+  } catch (err) {
+    // The platform asking the user to grant access must reach Forge unchanged.
+    if (isPlatformAuthError(err)) throw err;
+    // Anything else thrown here is a request that did not complete: a dropped
+    // connection, a timeout or a proxy failure. It says nothing about the page.
+    return problemPageEvidence('interrupted', http.now().toISOString());
+  }
   const retrievedAt = http.now().toISOString();
 
   // Confluence answers 404 both for a deleted page and for a page the user may not see.
@@ -97,13 +110,28 @@ export async function checkPage(link, issue, http) {
 }
 
 /**
+ * Is this the platform asking the user to grant the app access? Forge handles that
+ * error itself by showing a consent prompt, so the app must not swallow it.
+ */
+export function isPlatformAuthError(err) {
+  return err?.name === 'NEEDS_AUTHENTICATION_ERR' || err?.options?.isExpectedError === true;
+}
+
+/**
  * Builds the full receipt for an issue.
+ *
+ * Returns the receipt the panel shows and, separately, a fingerprint for stale
+ * detection. The fingerprint knows the id of every linked page, including pages the
+ * viewer cannot read, so it stays on the server and is never sent to the panel.
  *
  * @param {string} issueKey e.g. "DREC-1"
  * @param {string|null} siteHost host of the current site, used to ignore links to other sites
  * @param {Http} http
+ * @param {{budgetMs?: number}} [options] stop starting new page reads after this long
+ * @returns {Promise<{receipt: object, fingerprint: Array}>}
  */
-export async function buildReceipt(issueKey, siteHost, http) {
+export async function buildReceipt(issueKey, siteHost, http, { budgetMs = TIME_BUDGET_MS } = {}) {
+  const started = http.now().getTime();
   if (!/^[A-Z][A-Z0-9_]+-\d+$/.test(issueKey || '')) {
     throw new ReceiptError('bad-issue', 'The panel could not tell which issue it is on.');
   }
@@ -129,15 +157,22 @@ export async function buildReceipt(issueKey, siteHost, http) {
   const remoteLinks = await linksRes.json();
   const { pages: links, ...counts } = confluencePagesFromLinks(remoteLinks, siteHost);
 
-  // Pages are read one after another so a burst does not trip the rate limit.
+  // Pages are read one after another so a burst does not trip the rate limit. When the
+  // time budget runs out, the remaining pages are reported as not read rather than guessed.
   const pages = [];
+  const fingerprint = [];
   for (const link of links) {
-    pages.push(await checkPage(link, issue, http));
+    const evidence =
+      http.now().getTime() - started > budgetMs
+        ? problemPageEvidence('timed-out', http.now().toISOString())
+        : await checkPage(link, issue, http);
+    pages.push(evidence);
+    fingerprint.push(...fingerprintOf([{ ...evidence, pageId: link.pageId }]));
   }
 
   const overall = overallVerdict(pages);
   const checkedAt = http.now().toISOString();
-  return {
+  const receipt = {
     issue,
     checkedAt,
     checkedAtLabel: formatUtc(checkedAt),
@@ -148,4 +183,5 @@ export async function buildReceipt(issueKey, siteHost, http) {
     pages,
     notes: linkNotes(counts),
   };
+  return { receipt, fingerprint };
 }

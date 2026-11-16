@@ -19,6 +19,8 @@ permissions:
     - read:jira-work
     # Read a Confluence page body and version, as the current user (REST v2 GET /pages/{id}).
     - read:page:confluence
+    # Keep each reviewer's recorded check (page ids, versions, verdicts; no page text).
+    - storage:app
 app:
   runtime:
     name: nodejs24.x

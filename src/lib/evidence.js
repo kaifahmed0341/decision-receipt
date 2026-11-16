@@ -52,6 +52,16 @@ export const PAGE_PROBLEMS = {
     appearance: 'default',
     message: 'Confluence asked us to slow down before this page could be read. Wait a minute, then select Check again.',
   },
+  interrupted: {
+    label: 'Request interrupted',
+    appearance: 'default',
+    message: 'The request for this page did not complete, for example because the connection dropped or timed out. Nothing from it is shown. Select Check again.',
+  },
+  'timed-out': {
+    label: 'Not read',
+    appearance: 'default',
+    message: 'The check stopped before reading this page to stay inside the time limit. Select Check again, or link fewer pages.',
+  },
   error: {
     label: 'Check failed',
     appearance: 'default',
@@ -167,7 +177,7 @@ export function okPageEvidence({ issue, link, page, retrievedAt, result }) {
 /**
  * Builds the block for a page that could not be checked. It carries no title, URL or
  * page id, so a reviewer without access learns nothing about the page.
- * @param {'unavailable'|'not-current'|'rate-limited'|'error'} status
+ * @param {'unavailable'|'not-current'|'rate-limited'|'interrupted'|'timed-out'|'error'} status
  * @param {string} retrievedAt
  */
 export function problemPageEvidence(status, retrievedAt) {

@@ -70,7 +70,7 @@ test('a page with no relevant sentence says so', () => {
 });
 
 test('a page that could not be read carries no title, url or page id', () => {
-  for (const status of ['unavailable', 'not-current', 'rate-limited', 'error']) {
+  for (const status of ['unavailable', 'not-current', 'rate-limited', 'interrupted', 'timed-out', 'error']) {
     const e = problemPageEvidence(status, '2026-11-16T11:00:00Z');
     assert.equal(e.status, status);
     assert.equal(e.title, undefined);

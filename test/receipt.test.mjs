@@ -69,7 +69,7 @@ test('errors thrown by the platform, such as a consent request, are not swallowe
 test('a denied or deleted page shows no title, url or text', async () => {
   for (const status of [403, 404]) {
     const http = fakeHttp({ links: res(200, [link('7')]), pages: { 7: res(status, { title: 'Secret plan' }) } });
-    const r = await buildReceipt('DREC-1', SITE, http);
+    const { receipt: r } = await buildReceipt('DREC-1', SITE, http);
     assert.equal(r.pages[0].status, 'unavailable');
     assert.ok(!JSON.stringify(r).includes('Secret plan'));
     assert.ok(!JSON.stringify(r).includes('Title 7'));
@@ -80,14 +80,14 @@ test('a denied or deleted page shows no title, url or text', async () => {
 
 test('a trashed page does not count as evidence', async () => {
   const http = fakeHttp({ links: res(200, [link('8')]), pages: { 8: res(200, page('8', 'Old', '<p>Approved DREC-1.</p>', 'trashed')) } });
-  const r = await buildReceipt('DREC-1', SITE, http);
+  const { receipt: r } = await buildReceipt('DREC-1', SITE, http);
   assert.equal(r.pages[0].status, 'not-current');
   assert.ok(!JSON.stringify(r).includes('Approved DREC-1'));
 });
 
 test('a page still rate limited after retries is reported, not guessed', async () => {
   const http = fakeHttp({ links: res(200, [link('9')]), pages: { 9: res(429, {}, { 'retry-after': '1' }) } });
-  const r = await buildReceipt('DREC-1', SITE, http);
+  const { receipt: r } = await buildReceipt('DREC-1', SITE, http);
   assert.equal(r.pages[0].status, 'rate-limited');
   assert.equal(http.calls.pages.length, 3);
 });
@@ -108,10 +108,48 @@ test('issue-level failures become plain messages', async () => {
 test('a receipt records when it was checked and quotes the page exactly', async () => {
   const html = '<p>Approved on 4 November: we remove the v1 CSV export endpoint (DREC-1).</p>';
   const http = fakeHttp({ links: res(200, [link('5')]), pages: { 5: res(200, page('5', 'Decision', html, 'current', 4)) } });
-  const r = await buildReceipt('DREC-1', SITE, http);
+  const { receipt: r } = await buildReceipt('DREC-1', SITE, http);
   assert.equal(r.overall, 'all-support');
   assert.equal(r.checkedAt, '2026-11-16T12:00:00.000Z');
   assert.equal(r.pages[0].version, 4);
   assert.equal(r.pages[0].excerpts[0].text, 'Approved on 4 November: we remove the v1 CSV export endpoint (DREC-1).');
   assert.match(r.pages[0].provenance, /^Version 4, last edited 10 Nov 2026, 08:00:00 UTC\. Retrieved 16 Nov 2026, 12:00:00 UTC\.$/);
+});
+
+test('a request that throws is reported as interrupted, without page details', async () => {
+  const http = fakeHttp({ links: res(200, [link('7')]) });
+  http.confluencePage = async () => {
+    throw new Error('socket hang up');
+  };
+  const { receipt, fingerprint } = await buildReceipt('DREC-1', SITE, http);
+  assert.equal(receipt.pages[0].status, 'interrupted');
+  assert.match(receipt.pages[0].message, /did not complete/);
+  assert.equal(receipt.pages[0].title, undefined);
+  assert.equal(receipt.overall, 'unchecked');
+  assert.deepEqual(fingerprint, [{ pageId: '7', status: 'interrupted', version: null, verdict: null }]);
+});
+
+test('pages after the time budget are reported as not read', async () => {
+  const http = fakeHttp({
+    links: res(200, [link('1'), link('2')]),
+    pages: { 1: res(200, page('1', 'One', '<p>DREC-1 approved.</p>')), 2: res(200, page('2', 'Two', '<p>DREC-1 approved.</p>')) },
+  });
+  let t = Date.parse('2026-11-16T12:00:00Z');
+  http.now = () => new Date(t);
+  const original = http.confluencePage;
+  http.confluencePage = async (id) => {
+    t += 30000; // each read takes 30 seconds
+    return original(id);
+  };
+  const { receipt } = await buildReceipt('DREC-1', SITE, http, { budgetMs: 18000 });
+  assert.equal(receipt.pages[0].status, 'ok');
+  assert.equal(receipt.pages[1].status, 'timed-out');
+  assert.equal(receipt.overall, 'incomplete');
+});
+
+test('the fingerprint keeps hidden page ids on the server side only', async () => {
+  const http = fakeHttp({ links: res(200, [link('7')]), pages: { 7: res(404, {}) } });
+  const { receipt, fingerprint } = await buildReceipt('DREC-1', SITE, http);
+  assert.equal(fingerprint[0].pageId, '7');
+  assert.ok(!JSON.stringify(receipt).includes('"7"'));
 });

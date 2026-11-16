@@ -11,6 +11,9 @@ import ForgeReconciler, {
   Heading,
   Inline,
   Link,
+  List,
+  ListItem,
+  LoadingButton,
   Lozenge,
   SectionMessage,
   Spinner,
@@ -91,20 +94,64 @@ const PageEvidence = ({ page, index }) => {
   );
 };
 
+/** Whether this reviewer's recorded check still matches the pages, and the record button. */
+const RecordBanner = ({ record, onRecord, recording, note }) => (
+  <Box xcss={pageBox}>
+    <Stack space="space.100">
+      <Inline space="space.100" alignBlock="center" spread="space-between">
+        <Lozenge appearance={record.appearance} isBold maxWidth={360}>
+          {record.label}
+        </Lozenge>
+        <LoadingButton appearance="primary" isLoading={recording} onClick={onRecord}>
+          {record.state === 'stale' ? 'Record a fresh check' : 'Record this check'}
+        </LoadingButton>
+      </Inline>
+      <Text>{record.detail}</Text>
+      {record.changes.length ? (
+        <List type="unordered">
+          {record.changes.map((change, i) => (
+            <ListItem key={i}>{change}</ListItem>
+          ))}
+        </List>
+      ) : null}
+      {note ? <Text>{note}</Text> : null}
+      <Text size="small">
+        A recorded check keeps page versions and results for you only. It holds no page text.
+      </Text>
+    </Stack>
+  </Box>
+);
+
 const App = () => {
   const [state, setState] = useState({ loading: true });
+  const [recording, setRecording] = useState(false);
+  const [note, setNote] = useState(null);
+
+  const interrupted = {
+    ok: false,
+    message:
+      'The check was interrupted before it finished, for example by a timeout or a lost connection. Nothing was recorded. Select Check again.',
+  };
 
   const check = useCallback(() => {
     setState({ loading: true });
+    setNote(null);
     invoke('getReceipt')
       .then((result) => setState({ loading: false, result }))
-      .catch(() =>
-        setState({
-          loading: false,
-          result: { ok: false, message: 'The check did not finish. Select Check again.' },
-        })
-      );
+      .catch(() => setState({ loading: false, result: interrupted }));
   }, []);
+
+  const record = useCallback(() => {
+    if (!state.result?.ok) return;
+    setRecording(true);
+    invoke('recordCheck', { fingerprintHash: state.result.fingerprintHash })
+      .then((result) => {
+        setState({ loading: false, result });
+        setNote(result.ok && !result.recorded ? result.message : null);
+      })
+      .catch(() => setNote('Recording was interrupted, so nothing was recorded. Select Record this check again.'))
+      .finally(() => setRecording(false));
+  }, [state]);
 
   useEffect(() => {
     check();
@@ -131,7 +178,7 @@ const App = () => {
     );
   }
 
-  const { receipt } = result;
+  const { receipt, record: recordState } = result;
   return (
     <Stack space="space.200">
       <Stack space="space.100">
@@ -149,12 +196,13 @@ const App = () => {
         <Text>{receipt.overallDetail}</Text>
         <Text size="small">
           Checked {receipt.pages.length} linked {receipt.pages.length === 1 ? 'page' : 'pages'} with your permissions
-          at {receipt.checkedAtLabel}. Read-only: nothing was changed.
+          at {receipt.checkedAtLabel}. Nothing in Jira or Confluence is changed.
         </Text>
       </Stack>
-      {receipt.notes.map((note, i) => (
+      <RecordBanner record={recordState} onRecord={record} recording={recording} note={note} />
+      {receipt.notes.map((linkNote, i) => (
         <SectionMessage key={i} appearance="information">
-          <Text>{note}</Text>
+          <Text>{linkNote}</Text>
         </SectionMessage>
       ))}
       {receipt.pages.map((page, i) => (
