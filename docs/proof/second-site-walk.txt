@@ -1,0 +1,10 @@
+DREC-1 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+DREC-2 expected [Unresolved conflict] got [Unresolved conflict] PASS
+DREC-3 expected [Missing evidence] got [Missing evidence] PASS
+DREC-4 expected [Could not check] got [Could not check] PASS
+DREC-5 expected [No decision pages linked] got [No decision pages linked] PASS
+DREC-6 expected [Unresolved conflict] got [Unresolved conflict] PASS
+DREC-7 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+DREC-8 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+DREC-9 expected [Unresolved conflict] got [Unresolved conflict] PASS
+DREC-10 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS

@@ -6,26 +6,80 @@
  *
  * Safe to run again: anything that already exists is reused, not duplicated.
  *
- * Usage:
- *   ATLASSIAN_SITE=https://your-site.atlassian.net \
- *   ATLASSIAN_EMAIL=you@example.com \
- *   ATLASSIAN_API_TOKEN=... \
+ * Usage, with nothing installed but Node.js 20 or later:
  *   node scripts/fixtures.mjs
+ * It asks for the site address, your Atlassian email and an API token
+ * (https://id.atlassian.com/manage-profile/security/api-tokens). The token is not
+ * shown while you type and is not saved. Or set them up front:
+ *   ATLASSIAN_SITE=https://your-site.atlassian.net ATLASSIAN_EMAIL=you@example.com \
+ *   ATLASSIAN_API_TOKEN=... node scripts/fixtures.mjs
  *
  * The account needs permission to create a Jira project and a Confluence space,
- * which a site admin has by default. FORGE_EMAIL is accepted in place of
- * ATLASSIAN_EMAIL so the Forge CLI's settings can be reused.
+ * which a site admin has by default. FIXTURE_PROJECT_KEY picks another project key
+ * if DREC is taken on your site. FORGE_EMAIL and FORGE_API_TOKEN are accepted too.
  */
-import { PROJECT, SPACE, PAGES, ISSUES } from '../fixtures/data.mjs';
+import { createInterface } from 'node:readline';
+import { PROJECT as BASE_PROJECT, SPACE, PAGES as BASE_PAGES, ISSUES } from '../fixtures/data.mjs';
 
-const site = (process.env.ATLASSIAN_SITE || '').replace(/\/+$/, '');
-const email = process.env.ATLASSIAN_EMAIL || process.env.FORGE_EMAIL;
-const token = process.env.ATLASSIAN_API_TOKEN || process.env.FORGE_API_TOKEN;
+/**
+ * Asks questions on the terminal through one shared reader, so typed or pasted answers
+ * are never lost between questions. What is typed after a secret question is not shown.
+ */
+let reader = null;
+let muted = false;
+const queued = [];
+const waiting = [];
+function startReader() {
+  reader = createInterface({ input: process.stdin, output: process.stdout, terminal: Boolean(process.stdin.isTTY) });
+  const write = reader._writeToOutput?.bind(reader);
+  if (write) reader._writeToOutput = (s) => (muted ? undefined : write(s));
+  reader.on('line', (line) => (waiting.length ? waiting.shift()(line.trim()) : queued.push(line.trim())));
+  reader.on('close', () => {
+    while (waiting.length) waiting.shift()('');
+  });
+}
+function ask(question, secret = false) {
+  if (!reader) startReader();
+  process.stdout.write(question);
+  muted = secret;
+  return new Promise((resolve) => {
+    const done = (answer) => {
+      muted = false;
+      if (secret) process.stdout.write('\n');
+      resolve(answer);
+    };
+    if (queued.length) done(queued.shift());
+    else waiting.push(done);
+  });
+}
+
+let site = process.env.ATLASSIAN_SITE || '';
+let email = process.env.ATLASSIAN_EMAIL || process.env.FORGE_EMAIL || '';
+let token = process.env.ATLASSIAN_API_TOKEN || process.env.FORGE_API_TOKEN || '';
+if (!site) site = await ask('Site address (for example https://your-site.atlassian.net): ');
+if (!email) email = await ask('Your Atlassian account email: ');
+if (!token) token = await ask('Your Atlassian API token (hidden): ', true);
+if (reader) reader.close();
+site = site.trim().replace(/\/+$/, '');
+if (!/^https?:\/\//.test(site)) site = `https://${site}`;
 if (!site || !email || !token) {
-  console.error('Set ATLASSIAN_SITE, ATLASSIAN_EMAIL (or FORGE_EMAIL) and ATLASSIAN_API_TOKEN first.');
+  console.error('A site address, an email and an API token are all needed.');
   process.exit(2);
 }
 const auth = `Basic ${Buffer.from(`${email}:${token}`).toString('base64')}`;
+
+// The page text names issues as DREC-1 to DREC-10. With another project key, every
+// page and expectation is rewritten to that key, so the rules still find them.
+const KEY = (process.env.FIXTURE_PROJECT_KEY || BASE_PROJECT.key).toUpperCase();
+if (!/^[A-Z][A-Z0-9]{1,9}$/.test(KEY)) {
+  console.error('FIXTURE_PROJECT_KEY must be 2 to 10 capital letters or digits, starting with a letter.');
+  process.exit(2);
+}
+const rekey = (s) => s.replace(/\bDREC-(\d+)/g, `${KEY}-$1`);
+const PROJECT = { ...BASE_PROJECT, key: KEY };
+const PAGES = Object.fromEntries(
+  Object.entries(BASE_PAGES).map(([k, p]) => [k, { ...p, body: rekey(p.body), ...(p.editedBody ? { editedBody: rekey(p.editedBody) } : {}) }])
+);
 
 /** Calls the site's REST API and returns {status, body}. Retries once on 429. */
 async function call(method, path, body) {
@@ -70,7 +124,12 @@ const adf = (text) => ({
 
 async function ensureProject() {
   const existing = await call('GET', `/rest/api/3/project/${PROJECT.key}`);
-  if (existing.status === 200) return existing.body;
+  if (existing.status === 200) {
+    if (existing.body.name !== PROJECT.name) {
+      throw new Error(`Project ${PROJECT.key} already exists on this site as "${existing.body.name}". Run again with FIXTURE_PROJECT_KEY set to an unused key, for example DRDEMO1.`);
+    }
+    return existing.body;
+  }
   const me = await must('GET', '/rest/api/3/myself');
   const templates = [
     'com.pyxis.greenhopper.jira:gh-simplified-kanban-classic',
@@ -177,7 +236,20 @@ async function linkPage(issueKey, pageId, title) {
   });
 }
 
+/** Checks the credentials and the products before changing anything. */
+async function preflight() {
+  const me = await call('GET', '/rest/api/3/myself');
+  if (me.status === 401) throw new Error('The site refused the email and API token. Check both, and that the token belongs to this email.');
+  if (me.status === 404 || me.status >= 500) throw new Error(`No Jira found at ${site}. Check the site address.`);
+  if (me.status !== 200) throw new Error(`Jira answered ${me.status} for your account.`);
+  const wiki = await call('GET', '/wiki/api/v2/spaces?limit=1');
+  if (wiki.status === 404) throw new Error(`No Confluence found at ${site}. The demo needs Jira and Confluence on the same site.`);
+  if (wiki.status === 401 || wiki.status === 403) throw new Error('Your account cannot use Confluence on this site.');
+  console.log(`Signed in to ${site} as ${me.body.displayName}.`);
+}
+
 async function main() {
+  await preflight();
   const project = await ensureProject();
   console.log(`Project ${project.key}: ${project.name}`);
   const space = await ensureSpace();
@@ -192,13 +264,15 @@ async function main() {
   }
 
   for (const issue of ISSUES) {
-    const key = await ensureIssue(issue);
+    const key = await ensureIssue({ ...issue, summary: issue.summary });
     for (const localId of issue.links) {
       await linkPage(key, pageIds[localId], PAGES[localId].linkTitle || PAGES[localId].title);
     }
     console.log(`Issue ${key}: ${issue.summary} -> expected "${issue.expected}", links ${issue.links.length}`);
   }
-  console.log(`Done. Open ${site}/browse/${PROJECT.key}-1 and add the Decision receipt panel.`);
+  console.log('');
+  console.log(`Done. Open ${site}/browse/${PROJECT.key}-2, select View app actions under the summary,`);
+  console.log('choose Decision receipt, and compare with the table in the README.');
 }
 
 main().catch((err) => {
