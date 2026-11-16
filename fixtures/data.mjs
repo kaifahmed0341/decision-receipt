@@ -72,6 +72,43 @@ export const PAGES = {
     body: '<p>Approved: the admin console moves to single sign-on in release 4.3 (DREC-7).</p>',
     editedBody: '<p>Deferred: single sign-on for the admin console waits for release 4.4 (DREC-7).</p>',
   },
+  // The three pages below use the storage shapes Confluence itself produces for its
+  // decision items, status lozenges, task lists and page-properties tables
+  // (see test/storage-samples). The panel used to show "Decision not found" for them.
+  onboardingDecision: {
+    title: 'DACI: archive the old onboarding emails',
+    body: [
+      '<ac:structured-macro ac:name="details" ac:schema-version="1"><ac:rich-text-body><table data-layout="default"><tbody>',
+      '<tr><th><p><strong>Status</strong></p></th><td><p><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="title">DECIDED</ac:parameter><ac:parameter ac:name="colour">Green</ac:parameter></ac:structured-macro></p></td></tr>',
+      '<tr><th><p><strong>Driver</strong></p></th><td><p>Lifecycle team</p></td></tr>',
+      '</tbody></table></ac:rich-text-body></ac:structured-macro>',
+      '<h2>Outcome</h2>',
+      '<ac:adf-extension><ac:adf-node type="decision-list"><ac:adf-attribute key="local-id">dl-onb</ac:adf-attribute><ac:adf-node type="decision-item"><ac:adf-attribute key="local-id">di-onb</ac:adf-attribute><ac:adf-attribute key="state">DECIDED</ac:adf-attribute><ac:adf-content>Archive the old onboarding emails after the March send (DREC-8)</ac:adf-content></ac:adf-node></ac:adf-node><ac:adf-fallback><ul class="decision-list"><li>Archive the old onboarding emails after the March send (DREC-8)</li></ul></ac:adf-fallback></ac:adf-extension>',
+      '<p><ac:placeholder>Summarize the outcome.</ac:placeholder></p>',
+    ].join(''),
+  },
+  webhookSync: {
+    title: 'Integrations sync, 12 November',
+    body: [
+      '<h2>DREC-9 legacy webhook signatures</h2>',
+      '<p>Status: <ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="title">DEFERRED</ac:parameter><ac:parameter ac:name="colour">Yellow</ac:parameter></ac:structured-macro></p>',
+      '<p>Two partners still verify the old signature format.</p>',
+      '<h2>DREC-11 partner rate limits</h2>',
+      '<p>Status: <ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="title">APPROVED</ac:parameter><ac:parameter ac:name="colour">Green</ac:parameter></ac:structured-macro></p>',
+    ].join(''),
+  },
+  searchLog: {
+    title: 'Platform decision log',
+    body: [
+      '<table data-layout="default"><tbody>',
+      '<tr><th><p>Issue</p></th><th><p>Decision</p></th><th><p>Status</p></th></tr>',
+      '<tr><td><p>DREC-10</p></td><td><p>Upgrade the search cluster to version 9</p></td><td><p><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="title">APPROVED</ac:parameter><ac:parameter ac:name="colour">Green</ac:parameter></ac:structured-macro></p></td></tr>',
+      '<tr><td><p>DREC-12</p></td><td><p>Move build agents to arm64</p></td><td><p><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="title">REJECTED</ac:parameter><ac:parameter ac:name="colour">Red</ac:parameter></ac:structured-macro></p></td></tr>',
+      '</tbody></table>',
+      '<ac:task-list><ac:task><ac:task-id>1</ac:task-id><ac:task-status>complete</ac:task-status><ac:task-body><span class="placeholder-inline-tasks">Approve DREC-10 upgrade window</span></ac:task-body></ac:task></ac:task-list>',
+      '<p><del>DREC-10 rejected by ops.</del></p>',
+    ].join(''),
+  },
   webhookNotes: {
     title: 'Webhook queue retirement notes',
     trash: true,
@@ -136,5 +173,26 @@ export const ISSUES = [
     expected: 'all-support',
     expectedAfterEdit: 'conflict',
     pageVerdicts: { ssoDecision: 'supports' },
+  },
+  {
+    summary: 'Archive the old onboarding emails',
+    description: 'Fixture: a DACI-style page with a DECIDED status lozenge and a native decision item.',
+    links: ['onboardingDecision'],
+    expected: 'all-support',
+    pageVerdicts: { onboardingDecision: 'supports' },
+  },
+  {
+    summary: 'Turn off the legacy webhook signatures',
+    description: 'Fixture: meeting notes with one status per issue section; this issue is deferred, another is approved.',
+    links: ['webhookSync'],
+    expected: 'conflict',
+    pageVerdicts: { webhookSync: 'conflicts' },
+  },
+  {
+    summary: 'Upgrade the search cluster to version 9',
+    description: 'Fixture: a decision log table row with an APPROVED lozenge, a done approval task and a struck-out note.',
+    links: ['searchLog'],
+    expected: 'all-support',
+    pageVerdicts: { searchLog: 'supports' },
   },
 ];

@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PAGES, ISSUES, PROJECT } from '../fixtures/data.mjs';
 import { buildReceipt } from '../src/lib/receipt.js';
+import { parseStorage } from '../src/lib/storage.js';
 
 const SITE = 'fixture.atlassian.net';
 const ids = Object.fromEntries(Object.keys(PAGES).map((k, i) => [k, String(1000 + i)]));
@@ -46,8 +47,9 @@ ISSUES.forEach((issue, index) => {
       const p = receipt.pages.find((x) => x.pageId === ids[local]);
       assert.ok(p, `page ${local} missing from receipt`);
       assert.equal(p.verdict, verdict, `page ${local}`);
-      // Every excerpt is an exact substring of the page text.
-      for (const ex of p.excerpts) assert.ok(PAGES[local].body.replace(/&#39;/g, "'").includes(ex.text.replace(/\.\.\.$/, '')), ex.text);
+      // Every excerpt is, word for word, text a reader sees on the page.
+      const visible = parseStorage(PAGES[local].body, PAGES[local].title).map((u) => u.text);
+      for (const ex of p.excerpts) assert.ok(visible.some((t) => t.includes(ex.text.replace(/^\.\.\.|\.\.\.$/g, ''))), ex.text);
     }
   });
 
