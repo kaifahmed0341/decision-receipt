@@ -59,7 +59,8 @@ export function makeRecord(receipt, fingerprint) {
   };
 }
 
-const VERDICT_WORDS = { supports: 'supports the task', conflicts: 'conflicts with the task', missing: 'states no decision' };
+const WAS = { supports: 'supported the task', conflicts: 'conflicted with the task', missing: 'stated no decision' };
+const IS = { supports: 'supports the task', conflicts: 'conflicts with the task', missing: 'states no decision' };
 
 /**
  * Compares a stored record with the current check.
@@ -88,7 +89,7 @@ export function compareWithRecord(record, current, titles) {
       if (old.version !== cur.version) {
         let text = `${name(id)} changed from version ${old.version} to version ${cur.version}.`;
         if (old.verdict !== cur.verdict) {
-          text += ` It ${VERDICT_WORDS[old.verdict] || 'had another result'} before and ${VERDICT_WORDS[cur.verdict] || 'has another result'} now.`;
+          text += ` Before, it ${WAS[old.verdict] || 'had another result'}. Now it ${IS[cur.verdict] || 'has another result'}.`;
         }
         changes.push({ pageId: id, text });
       }

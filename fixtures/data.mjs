@@ -54,6 +54,24 @@ export const PAGES = {
       '<ul><li>Share the load test results by Friday.</li></ul>',
     ].join(''),
   },
+  auditDecision: {
+    title: 'Decision: audit log retention',
+    body: '<p>The security group agreed to move audit logs to cold storage after 90 days (DREC-6).</p>',
+  },
+  // Restricted so only the account that runs the fixture script can read it.
+  // The Jira link gets a neutral title so the link itself does not reveal the page title.
+  auditRestricted: {
+    title: 'Legal hold review: audit logs',
+    restrictToOwner: true,
+    linkTitle: 'Confluence page',
+    body: '<p>Legal has not approved moving audit logs to cold storage while the contract review is open (DREC-6).</p>',
+  },
+  // Edited by scripts/edit-page.mjs to show a recorded check going stale.
+  ssoDecision: {
+    title: 'Decision: admin console sign-in',
+    body: '<p>Approved: the admin console moves to single sign-on in release 4.3 (DREC-7).</p>',
+    editedBody: '<p>Deferred: single sign-on for the admin console waits for release 4.4 (DREC-7).</p>',
+  },
   webhookNotes: {
     title: 'Webhook queue retirement notes',
     trash: true,
@@ -63,7 +81,9 @@ export const PAGES = {
 
 /**
  * Issues, in creation order. `links` names pages from PAGES. `expected` is the overall
- * verdict the panel should show, and `pageVerdicts` the verdict for each readable page.
+ * verdict the panel should show the fixture owner, and `pageVerdicts` the verdict for
+ * each readable page. `expectedForOthers` is the overall verdict for a user who cannot
+ * read the restricted page, where that differs.
  */
 export const ISSUES = [
   {
@@ -100,5 +120,21 @@ export const ISSUES = [
     links: [],
     expected: 'no-links',
     pageVerdicts: {},
+  },
+  {
+    summary: 'Move audit logs to cold storage after 90 days',
+    description: 'Fixture: one open page supports the task; a second page, restricted to its owner, conflicts.',
+    links: ['auditDecision', 'auditRestricted'],
+    expected: 'conflict',
+    expectedForOthers: 'incomplete',
+    pageVerdicts: { auditDecision: 'supports', auditRestricted: 'conflicts' },
+  },
+  {
+    summary: 'Turn on single sign-on for the admin console',
+    description: 'Fixture: the linked page supports the task until scripts/edit-page.mjs edits it.',
+    links: ['ssoDecision'],
+    expected: 'all-support',
+    expectedAfterEdit: 'conflict',
+    pageVerdicts: { ssoDecision: 'supports' },
   },
 ];

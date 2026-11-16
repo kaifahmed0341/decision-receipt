@@ -112,20 +112,38 @@ async function findPage(spaceId, title, statuses) {
   return (res.results || [])[0] || null;
 }
 
-async function ensurePage(spaceId, page) {
+/**
+ * Lets only the given account read or edit the page. Other users, including site
+ * users with access to the space, then get a 404 for it.
+ */
+async function restrictToAccount(pageId, accountId) {
+  const user = [{ type: 'known', accountId }];
+  await must('PUT', `/wiki/rest/api/content/${pageId}/restriction`, [
+    { operation: 'read', restrictions: { user, group: [] } },
+    { operation: 'update', restrictions: { user, group: [] } },
+  ]);
+}
+
+async function ensurePage(spaceId, page, me) {
   const existing = await findPage(spaceId, page.title, ['current', 'trashed']);
-  if (existing) {
-    if (page.trash && existing.status === 'current') await must('DELETE', `/wiki/api/v2/pages/${existing.id}`);
-    return { id: existing.id, status: page.trash ? 'trashed' : existing.status };
+  let id = existing?.id;
+  let status = existing?.status;
+  if (!existing) {
+    const created = await must('POST', '/wiki/api/v2/pages', {
+      spaceId,
+      status: 'current',
+      title: page.title,
+      body: { representation: 'storage', value: page.body },
+    });
+    id = created.id;
+    status = 'current';
   }
-  const created = await must('POST', '/wiki/api/v2/pages', {
-    spaceId,
-    status: 'current',
-    title: page.title,
-    body: { representation: 'storage', value: page.body },
-  });
-  if (page.trash) await must('DELETE', `/wiki/api/v2/pages/${created.id}`);
-  return { id: created.id, status: page.trash ? 'trashed' : 'current' };
+  if (page.restrictToOwner) await restrictToAccount(id, me.accountId);
+  if (page.trash && status === 'current') {
+    await must('DELETE', `/wiki/api/v2/pages/${id}`);
+    status = 'trashed';
+  }
+  return { id, status: page.restrictToOwner ? `${status}, restricted to ${me.displayName}` : status };
 }
 
 async function ensureIssue(issue) {
@@ -150,6 +168,7 @@ async function ensureIssue(issue) {
  * Posting the same globalId again updates the link instead of adding a second one.
  */
 async function linkPage(issueKey, pageId, title) {
+  // Keep the same globalId shape on reruns so Jira updates the link rather than adding one.
   await must('POST', `/rest/api/3/issue/${issueKey}/remotelink`, {
     globalId: `appId=decision-receipt-fixtures&pageId=${pageId}`,
     application: { type: 'com.atlassian.confluence', name: 'Confluence' },
@@ -164,16 +183,19 @@ async function main() {
   const space = await ensureSpace();
   console.log(`Space ${space.key}: ${space.name} (id ${space.id})`);
 
+  const me = await must('GET', '/rest/api/3/myself');
   const pageIds = {};
   for (const [localId, page] of Object.entries(PAGES)) {
-    const { id, status } = await ensurePage(space.id, page);
+    const { id, status } = await ensurePage(space.id, page, me);
     pageIds[localId] = id;
     console.log(`Page ${id} [${status}]: ${page.title}`);
   }
 
   for (const issue of ISSUES) {
     const key = await ensureIssue(issue);
-    for (const localId of issue.links) await linkPage(key, pageIds[localId], PAGES[localId].title);
+    for (const localId of issue.links) {
+      await linkPage(key, pageIds[localId], PAGES[localId].linkTitle || PAGES[localId].title);
+    }
     console.log(`Issue ${key}: ${issue.summary} -> expected "${issue.expected}", links ${issue.links.length}`);
   }
   console.log(`Done. Open ${site}/browse/${PROJECT.key}-1 and add the Decision receipt panel.`);

@@ -28,7 +28,7 @@ test('no record, a current record, and an edited page', () => {
   assert.equal(stale.state, 'stale');
   assert.equal(
     stale.changes[0].text,
-    '"Decision page" changed from version 1 to version 2. It supports the task before and conflicts with the task now.'
+    '"Decision page" changed from version 1 to version 2. Before, it supported the task. Now it conflicts with the task.'
   );
 });
 

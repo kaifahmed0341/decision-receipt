@@ -1,0 +1,25 @@
+{
+  "issue": "DREC-6",
+  "checked_at": "2026-11-16",
+  "method": "Page text and HTML of the Jira issue view read through Chrome after the panel finished, for each account. The restricted page is 'Legal hold review: audit logs' (page id 1114114), readable by its owner only.",
+  "reviewer_account (Demo Reviewer, no access to the restricted page)": {
+    "pageTitleAnywhereInText": false,
+    "pageBodyAnywhereInText": false,
+    "pageTitleInHtml": false,
+    "pageBodyInHtml": false,
+    "panelMentionsPageId": false,
+    "panelHasNotAvailable": true,
+    "panelHasOpenPageQuote": true,
+    "panelOverall": "Evidence incomplete"
+  },
+  "owner_account (kaif ahmed, positive control)": {
+    "pageTitleAnywhereInText": true,
+    "pageBodyAnywhereInText": true,
+    "pageTitleInHtml": true,
+    "pageBodyInHtml": true,
+    "panelMentionsPageId": false,
+    "panelHasNotAvailable": false,
+    "panelHasOpenPageQuote": true,
+    "panelOverall": "Unresolved conflict"
+  }
+}
