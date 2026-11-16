@@ -53,7 +53,7 @@ You need an Atlassian Cloud site with **Jira and Confluence** where you are a si
 
 5. **See the permission boundary.** `DREC-6` links "Legal hold review: audit logs", which the script restricted to your account. Invite any second user as a normal Jira and Confluence user and open `DREC-6` as them (or in a private window). Expected: "Evidence incomplete" and "Linked page 1: Not available to you", with nothing from that page anywhere in the panel; your own account sees "Unresolved conflict" with the page quoted.
 
-6. **Ask Rovo** (sites with Rovo). On `DREC-2` select **Ask Rovo** in the panel, or open Rovo chat and choose the **Decision receipt** agent. Expected: the overall result, each page with its label, version and read time, the deciding quotes word for word, and, if it adds anything, a separate "Rovo's reading (not part of the receipt)". [Screenshot from the demo site](docs/proof/rovo-agent-drec-2.png).
+6. **Ask Rovo** (sites with Rovo). On `DREC-2` select **Ask Rovo** in the panel, or open Rovo chat and choose the **Decision receipt** agent. Expected: the overall result, each page with its label, version and read time, the deciding quotes word for word, and, if it adds anything, a separate "Rovo's reading (not part of the receipt)". [Live transcript from the demo site](docs/proof/rovo-agent-drec-2.txt).
 
 7. **MCP tools** (optional). In Rovo Studio, create a custom agent and add the Decision receipt tools. For outside MCP clients a site admin turns the tools on under Administration, Apps, Sites, your site, Connected apps; the endpoint is `https://mcp.atlassian.com/forge/a6c7992f-da45-443e-ab7f-88cbffdd967b`.
 
@@ -87,8 +87,8 @@ Steps 1 to 4 were walked on 16 November 2026 on a second site created and admini
 | The task is reworded after a check | Stale, naming the summary change and the changed result | [DREC-1](docs/proof/drec-1-stale-after-summary-edit.png) | `staleness.test.mjs` |
 | Confluence's own decision formats | DECIDED lozenge, decision item, decision log row read | [DREC-8](docs/proof/drec-8-decision-template.png), [DREC-10](docs/proof/drec-10-decision-log.png) | `storage.test.mjs` |
 | A page holds statuses for several issues | Only this issue's section counts | [DREC-9](docs/proof/drec-9-scoped-status.png) | `classify.test.mjs` |
-| The Rovo agent | Quotes the receipt, labels its own reading | [DREC-2 in Rovo](docs/proof/rovo-agent-drec-2.png) | `agent.test.mjs` |
-| A second, independent site installs the release | Installed from the link; ten of ten expected results | [log](docs/proof/second-site-walk.txt) | |
+| The Rovo agent | Quotes the receipt, labels its own reading | [DREC-2 in Rovo, transcript](docs/proof/rovo-agent-drec-2.txt) | `agent.test.mjs` |
+| A second, independent site installs the release | Installed from the link; ten of ten expected results | [log](docs/proof/second-site-walk.txt), [DREC-2](docs/proof/second-site-drec-2.png), [DREC-6](docs/proof/second-site-drec-6.png) | |
 | Rate limit, interrupted request, time limit | Reported per page; never guessed | not triggerable on demand | `receipt.test.mjs` |
 
 ## Developer setup

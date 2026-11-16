@@ -19,3 +19,7 @@ DREC-7 after Record this check: "Recorded check still matches", headline "Eviden
 after the page was edited to version 2: "Recorded check is stale", naming "Decision: admin console sign-in" version 1 to 2,
 "Before, it supported the task. Now it conflicts with the task.", headline "Unresolved conflict". PASS
 The page was then restored (version 3).
+
+Screenshots second-site-drec-2.png and second-site-drec-6.png were taken headless (Playwright with Chromium), signed in as
+the same account, because the Mac's screen was locked. On this site that account ran the demo script, so it owns the
+restricted page on DREC-6 and correctly sees "Unresolved conflict" with the page quoted.
