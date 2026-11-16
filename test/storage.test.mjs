@@ -21,7 +21,8 @@ test('real page: status lozenge, decision item, tasks and table rows are read as
   assert.ok(!all.includes('placeholder'), 'editor placeholder dropped');
   assert.ok(!/DREC-1 approved\.(?! by)/.test(all), 'struck-out text dropped');
   assert.equal((all.match(/keep the endpoint/g) || []).length, 1, 'decision fallback copy dropped');
-  assert.ok(!all.includes('Details'), 'macro parameter dropped');
+  assert.ok(!all.includes('Green'), 'lozenge colour parameter dropped');
+  assert.ok(all.includes('Details'), 'expand title kept: readers see it');
   assert.ok(all.includes('Inside an expand.'), 'expand body kept');
 });
 
@@ -41,7 +42,7 @@ test('hidden, placeholder and struck-out text cannot turn a page green', () => {
 });
 
 test('an open task and an undecided item do not count as support', () => {
-  assert.equal(verdict('<ac:task-list><ac:task><ac:task-status>incomplete</ac:task-status><ac:task-body>DREC-1 approved by the API council</ac:task-body></ac:task></ac:task-list>').verdict, 'missing');
+  assert.equal(verdict('<ac:task-list><ac:task><ac:task-status>incomplete</ac:task-status><ac:task-body>DREC-1 approved by the API council</ac:task-body></ac:task></ac:task-list>').verdict, 'unclear');
   assert.equal(verdict('<ac:task-list><ac:task><ac:task-status>complete</ac:task-status><ac:task-body>Approve DREC-1</ac:task-body></ac:task></ac:task-list>').verdict, 'supports');
 });
 
@@ -72,4 +73,48 @@ test('a filled DACI page reads its status lozenge, scoped by the page title', ()
 test('sentences inside one paragraph are still judged one by one', () => {
   const r = verdict('<p>Context first. DREC-1 is deferred. The rest is unrelated.</p>');
   assert.deepEqual(r.findings.map((f) => f.sentence), ['DREC-1 is deferred.']);
+});
+
+// Review 2 findings.
+const SOAP = { key: 'RX-1', summary: 'Remove the legacy SOAP gateway' };
+
+test('ADR pages: a bare status word under a Status heading decides for the page', () => {
+  const adr = (st) => `<h2>Status</h2><p>${st}</p><h2>Context</h2><p>The gateway serves two partners.</p><h2>Decision</h2><p>We remove the gateway in release 9.0.</p>`;
+  assert.equal(verdict(adr('Accepted'), 'ADR 014: Remove the legacy SOAP gateway', SOAP).verdict, 'supports');
+  assert.equal(verdict(adr('Rejected'), 'ADR 014: Remove the legacy SOAP gateway', SOAP).verdict, 'conflicts');
+  assert.equal(verdict(adr('Superseded by ADR 020'), 'ADR 014: Remove the legacy SOAP gateway', SOAP).verdict, 'conflicts');
+  assert.equal(verdict(adr('Proposed'), 'ADR 014: Remove the legacy SOAP gateway', SOAP).verdict, 'unclear');
+  assert.equal(verdict(adr('Accepted'), 'ADR 015: Adopt OpenTelemetry', SOAP).verdict, 'missing', 'another subject');
+  assert.equal(verdict(adr('Status: Accepted'), 'ADR 014: Remove the legacy SOAP gateway', SOAP).verdict, 'supports');
+});
+
+test('a decided status with no known direction is unclear, not support', () => {
+  const task = { key: 'RX-10', summary: 'Translate the help centre into German' };
+  const html = '<table><tbody><tr><th>Status</th><td><ac:structured-macro ac:name="status"><ac:parameter ac:name="title">DECIDED</ac:parameter></ac:structured-macro></td></tr><tr><th>Decision</th><td>Translating the help centre into German is dropped from the plan</td></tr></tbody></table>';
+  assert.notEqual(verdict(html, 'Help centre languages', task).verdict, 'supports');
+});
+
+test('an inline lozenge next to the issue key is read as its status', () => {
+  const lozenge = (t) => `<ac:structured-macro ac:name="status"><ac:parameter ac:name="title">${t}</ac:parameter></ac:structured-macro>`;
+  assert.equal(verdict(`<p>DREC-1 ${lozenge('DECIDED')}</p>`).verdict, 'supports');
+  assert.equal(verdict(`<p>DREC-1 ${lozenge('REJECTED')}</p>`).verdict, 'conflicts');
+});
+
+test('on a page with no headings a status line belongs to the paragraph just before it', () => {
+  const html = '<p>Remove the legacy SOAP gateway: discussed, no outcome.</p><p>OpenTelemetry adoption for tracing.</p><p>Status: Approved</p>';
+  assert.notEqual(verdict(html, 'Platform notes', SOAP).verdict, 'supports');
+  const right = '<p>OpenTelemetry adoption for tracing.</p><p>Remove the legacy SOAP gateway.</p><p>Status: Approved</p>';
+  assert.equal(verdict(right, 'Platform notes', SOAP).verdict, 'supports');
+});
+
+test('expand and panel titles are read; invisible text is not', () => {
+  assert.equal(verdict('<ac:structured-macro ac:name="expand"><ac:parameter ac:name="title">DREC-1 rejected by legal on 4 May</ac:parameter><ac:rich-text-body><p>The integration council approved DREC-1.</p></ac:rich-text-body></ac:structured-macro>').verdict, 'conflicts');
+  for (const style of ['color: rgb(255,255,255);', 'color: #ffffff', 'visibility: hidden', 'font-size: 0px', 'opacity: 0']) {
+    assert.equal(verdict(`<p><span style="${style}">DREC-1 approved.</span></p>`).verdict, 'missing', style);
+  }
+});
+
+test('names of standards are not other issues', () => {
+  const html = '<h2>DREC-4 nightly backups, encrypted with AES-256</h2><p>Status: Approved</p>';
+  assert.equal(verdict(html, 'Notes', { key: 'DREC-4', summary: 'Archive the legacy webhook queue' }).verdict, 'supports');
 });

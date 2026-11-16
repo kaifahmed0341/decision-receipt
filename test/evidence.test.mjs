@@ -37,6 +37,13 @@ test('a long excerpt is cut around the deciding phrase', () => {
   assert.ok(cut.text.startsWith('...'));
 });
 
+test('the excerpt window uses the matched position, not an earlier word containing the cue', () => {
+  const long = 'Some people disagreed at first. ' + 'filler words about the history of the change '.repeat(12) + 'and then the council agreed to DREC-1.';
+  const at = long.lastIndexOf('agreed');
+  const cut = excerptOf(long, 'phrase "agreed"', at);
+  assert.ok(cut.text.includes('the council agreed'));
+});
+
 test('excerpts keep the exact words and mark a cut', () => {
   assert.deepEqual(excerptOf('Short sentence.'), { text: 'Short sentence.', truncated: false });
   const long = 'word '.repeat(200).trim();
@@ -75,7 +82,7 @@ test('no more than the excerpt limit is shown, and the rest are counted', () => 
 
 test('a page with no relevant sentence says so', () => {
   const e = okPageEvidence({ issue: { key: 'DREC-3' }, link: { pageId: '1', url: 'u' }, page: { title: 't', version: 1, editedAt: '' }, retrievedAt: '', result: { verdict: 'missing', findings: [] } });
-  assert.match(e.emptyNote, /No sentence on this page names DREC-3/);
+  assert.match(e.emptyNote, /Nothing on this page names DREC-3/);
 });
 
 test('a page that could not be read carries no title, url or page id', () => {

@@ -141,8 +141,8 @@ export const ISSUES = [
     summary: 'Raise the public API rate limit to 600 requests per minute',
     description: 'Fixture: the linked page discusses the topic but states no decision.',
     links: ['platformSync'],
-    expected: 'missing',
-    pageVerdicts: { platformSync: 'missing' },
+    expected: 'unclear',
+    pageVerdicts: { platformSync: 'unclear' },
   },
   {
     summary: 'Archive the legacy webhook queue',

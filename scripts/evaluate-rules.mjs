@@ -61,7 +61,11 @@ const perLabel = Object.fromEntries(
 const conflictShownAsSupport = rows.filter((r) => r.expected === 'conflict' && r.got === 'support').length;
 const supportShownAsConflict = rows.filter((r) => r.expected === 'support' && r.got === 'conflict').length;
 const hits = rows.filter((r) => r.hit).length;
-const summary = { total: rows.length, hits, misses: rows.length - hits, accuracy: +(hits / rows.length).toFixed(3), perLabel, conflictShownAsSupport, supportShownAsConflict, confusion };
+// Abstention: items a reader would call support or conflict that the rules left undecided.
+const decidable = rows.filter((r) => r.expected === 'support' || r.expected === 'conflict');
+const abstained = decidable.filter((r) => r.got === 'mention' || r.got === 'irrelevant').length;
+const abstention = +(abstained / (decidable.length || 1)).toFixed(2);
+const summary = { total: rows.length, hits, misses: rows.length - hits, accuracy: +(hits / rows.length).toFixed(3), perLabel, conflictShownAsSupport, supportShownAsConflict, abstained, decidable: decidable.length, abstention, confusion };
 
 if (process.argv.includes('--json')) {
   console.log(JSON.stringify({ summary, rows }, null, 2));
@@ -75,6 +79,7 @@ if (process.argv.includes('--json')) {
   }
   console.log(`  conflicts the rules called support: ${conflictShownAsSupport}`);
   console.log(`  supports the rules called conflict: ${supportShownAsConflict}`);
+  console.log(`  abstention: ${abstained} of ${decidable.length} support or conflict items left undecided (${Math.round(100 * abstention)} percent)`);
   console.log('');
   console.log('Confusion (rows = human label, columns = rule output):');
   console.log(`  ${''.padEnd(10)} ${LABELS.map((l) => l.padEnd(10)).join(' ')}`);

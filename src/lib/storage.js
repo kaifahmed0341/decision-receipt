@@ -127,8 +127,11 @@ function macroParam(node, name) {
 function isHidden(node) {
   if (!node.tag) return false;
   if (DROP_TAGS.has(node.tag)) return true;
-  const style = (node.attrs.style || '').toLowerCase();
-  if (/line-through/.test(style) || /display\s*:\s*none/.test(style)) return true;
+  const style = (node.attrs.style || '').toLowerCase().replace(/\s+/g, '');
+  if (/line-through/.test(style) || /display:none/.test(style) || /visibility:hidden/.test(style)) return true;
+  if (/(?:^|;)opacity:0(?:\.0*)?(?:;|$)/.test(style) || /font-size:0(?:px|pt|em|rem|%)?(?:;|$)/.test(style)) return true;
+  // White or transparent text is invisible on Confluence's light page.
+  if (/(?:^|;)color:(?:#fff(?:fff)?|white|transparent|rgb\(255,255,255\)|rgba\([^)]*,0\))(?:;|$)/.test(style)) return true;
   if (isMacro(node)) {
     if (DROP_MACROS.has(macroName(node))) return true;
     if ((macroParam(node, 'hidden') || '').trim().toLowerCase() === 'true') return true;
@@ -286,8 +289,13 @@ export function parseStorage(storage, title) {
         buffer.push(flatText(node, { statuses }));
         return;
       }
-      // Panels, expands, page properties and other wrappers: read their body only.
+      // Panels, expands, page properties and other wrappers: read their body. Expands and
+      // panels also show their title to readers, so the title is read as a line.
       flush();
+      if (/^(?:expand|panel|info|note|tip|warning|ui-expand|section)$/.test(name)) {
+        const t = clean(macroParam(node, 'title') || '');
+        if (/[A-Za-z0-9]/.test(t)) units.push({ text: t, kind: 'text', section, heading, table, statuses: [] });
+      }
       walk(node);
       flush();
       return;

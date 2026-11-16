@@ -75,8 +75,8 @@ export function unreadCounts(u = {}) {
   return { otherSite: u?.otherSite || 0, unreadable: u?.unreadable || 0, skipped: u?.skipped || 0 };
 }
 
-const WAS = { supports: 'supported the task', conflicts: 'conflicted with the task', missing: 'stated no decision' };
-const IS = { supports: 'supports the task', conflicts: 'conflicts with the task', missing: 'states no decision' };
+const WAS = { supports: 'supported the task', conflicts: 'conflicted with the task', missing: 'stated no decision', unclear: 'had no clear decision' };
+const IS = { supports: 'supports the task', conflicts: 'conflicts with the task', missing: 'states no decision', unclear: 'has no clear decision' };
 
 /**
  * Compares a stored record with the current check.

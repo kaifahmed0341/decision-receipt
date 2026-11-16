@@ -187,3 +187,24 @@ test('earlier keys from the change history still match pages that use them', asy
   const { receipt } = await buildReceipt('PLAT-44', SITE, http);
   assert.equal(receipt.overall, 'all-support');
 });
+
+test('a page the platform will not read because Confluence is not connected says so', async () => {
+  const http = fakeHttp({ links: res(200, [link('7')]) });
+  http.confluencePage = async () => {
+    const e = new Error('Request confluence is not allowed from jira context.');
+    e.name = 'REQUEST_EGRESS_ALLOWLIST_ERR';
+    throw e;
+  };
+  const { receipt } = await buildReceipt('DREC-1', SITE, http);
+  assert.equal(receipt.pages[0].status, 'confluence-missing');
+  assert.match(receipt.pages[0].message, /not connected to Confluence/);
+});
+
+test('"mentioned in" links are counted, not read as evidence', async () => {
+  const mention = { ...link('8'), relationship: 'mentioned in' };
+  const http = fakeHttp({ links: res(200, [mention]), pages: { 8: res(200, page('8', 'Retro', '<p>DREC-1 approved.</p>')) } });
+  const { receipt } = await buildReceipt('DREC-1', SITE, http);
+  assert.equal(receipt.pages.length, 0);
+  assert.equal(receipt.overall, 'no-links');
+  assert.match(receipt.notes[0], /only mentions this issue/);
+});

@@ -107,6 +107,8 @@ export async function checkPage(link, issue, http, { siteHost = null, deadline =
   } catch (err) {
     // The platform asking the user to grant access must reach Forge unchanged.
     if (isPlatformAuthError(err)) throw err;
+    // The app is installed in Jira but not connected to Confluence on this site.
+    if (isProductNotConnected(err)) return problemPageEvidence('confluence-missing', http.now().toISOString());
     // Anything else thrown here is a request that did not complete: a dropped
     // connection, a timeout or a proxy failure. It says nothing about the page.
     return problemPageEvidence('interrupted', http.now().toISOString());
@@ -143,6 +145,14 @@ export async function checkPage(link, issue, http, { siteHost = null, deadline =
  */
 export function isPlatformAuthError(err) {
   return err?.name === 'NEEDS_AUTHENTICATION_ERR' || err?.options?.isExpectedError === true;
+}
+
+/**
+ * Did the platform refuse a Confluence request because the app is not installed in
+ * Confluence on this site? Forge throws a "not allowed" error for that.
+ */
+export function isProductNotConnected(err) {
+  return err?.name === 'REQUEST_EGRESS_ALLOWLIST_ERR' || /not allowed from \w+ context/i.test(String(err?.message || ''));
 }
 
 /**

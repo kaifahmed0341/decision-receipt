@@ -88,7 +88,10 @@ export function looksLikeConfluenceLink(link) {
  * @param {Array<object>} remoteLinks raw remote links from Jira
  * @param {string|null} siteHost host of the current site, e.g. "example.atlassian.net"
  * @param {number} maxPages how many pages to check at most, to stay inside time limits
- * @returns {{pages: Array<{pageId: string, linkId: number}>, otherSite: number, unreadable: number, skipped: number}}
+ * Links Jira adds by itself when a Confluence page mentions the issue ("mentioned in")
+ * are not decision links; they are counted and left out, so anyone who can edit some
+ * page cannot add evidence just by naming the issue.
+ * @returns {{pages: Array<{pageId: string, linkId: number}>, otherSite: number, unreadable: number, skipped: number, mentionedIn: number}}
  */
 export function confluencePagesFromLinks(remoteLinks, siteHost, maxPages = 10) {
   const pages = [];
@@ -96,9 +99,14 @@ export function confluencePagesFromLinks(remoteLinks, siteHost, maxPages = 10) {
   let otherSite = 0;
   let unreadable = 0;
   let skipped = 0;
+  let mentionedIn = 0;
 
   for (const link of Array.isArray(remoteLinks) ? remoteLinks : []) {
     if (!looksLikeConfluenceLink(link)) continue;
+    if (/mention/i.test(link?.relationship || '')) {
+      mentionedIn += 1;
+      continue;
+    }
     const url = link?.object?.url || '';
     const target = linkTarget(url, siteHost);
 
@@ -137,5 +145,5 @@ export function confluencePagesFromLinks(remoteLinks, siteHost, maxPages = 10) {
     pages.push({ pageId, linkId: link.id });
   }
 
-  return { pages, otherSite, unreadable, skipped };
+  return { pages, otherSite, unreadable, skipped, mentionedIn };
 }
