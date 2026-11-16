@@ -11,7 +11,9 @@
   "scripts": {
     "lint": "eslint src/**/*",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test test/*.test.mjs",
-    "fixtures": "node scripts/fixtures.mjs"
+    "fixtures": "node scripts/fixtures.mjs",
+    "evaluate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/evaluate-rules.mjs",
+    "edit-page": "node scripts/edit-page.mjs"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
