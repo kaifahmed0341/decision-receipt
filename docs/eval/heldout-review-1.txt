@@ -1,0 +1,92 @@
+Held-out run of the reviewer's 75-sentence set, rules at commit 74155d0, 2026-11-16T07:51Z. Run once; rules not changed after it.
+
+HIT   BLND-1  expected support    got support     Decision: migrate the billing service to Postgres 16 in Q1.
+HIT   BLND-1  expected support    got support     The architecture board approved BLND-1 on 3 March.
+HIT   BLND-1  expected mention    got mention     We will probably migrate the billing service to Postgres 16 next quarter.
+HIT   BLND-1  expected support    got support     Status: Approved
+HIT   BLND-1  expected conflict   got conflict    Migrating the billing service to Postgres 16 was superseded by the move to a managed database.
+HIT   BLND-1  expected mention    got mention     Should we migrate the billing service to Postgres 16 before the audit?
+HIT   BLND-1  expected conflict   got conflict    Billing service migration to Postgres 16 is approved for staging only; production waits for the load test.
+HIT   BLND-1  expected conflict   got conflict    BLND-1 was reverted after the invoice totals drifted.
+HIT   BLND-1  expected irrelevant got irrelevant  The Postgres 16 upgrade for analytics is approved.
+HIT   BLND-1  expected conflict   got conflict    We agreed to keep the billing service on Postgres 12 until the vendor certifies 16.
+HIT   BLND-1  expected irrelevant got irrelevant  BLND-12 was approved last week.
+HIT   BLND-2  expected support    got support     Dark mode for the mobile app is approved and ships in 5.2.
+HIT   BLND-2  expected conflict   got conflict    Dark mode is out of scope for the mobile app this year.
+HIT   BLND-2  expected support    got support     BLND-2: go ahead.
+HIT   BLND-2  expected mention    got mention     Nobody objected to dark mode in the mobile app review.
+HIT   BLND-2  expected mention    got mention     Dark mode for the mobile app might land after the redesign, if design has time.
+HIT   BLND-2  expected support    got support     The mobile app will get dark mode on 14 February.
+HIT   BLND-2  expected conflict   got conflict    We decided not to enable dark mode in the mobile app until accessibility signs it off.
+MISS  BLND-2  expected irrelevant got conflict    Dark mode on the web app is rejected.
+HIT   BLND-2  expected mention    got mention     Is dark mode for the mobile app still on the roadmap?
+MISS  BLND-2  expected mention    got support     Following BLND-2, the mobile team agreed the colours with design.
+HIT   BLND-3  expected support    got support     We will drop support for Internet Explorer 11 on 1 June.
+HIT   BLND-3  expected conflict   got conflict    Support for Internet Explorer 11 stays until the government contract ends.
+HIT   BLND-3  expected support    got support     Dropping Internet Explorer 11 support was approved by the product council.
+HIT   BLND-3  expected conflict   got conflict    The plan to drop Internet Explorer 11 support is on hold pending the customer survey.
+MISS  BLND-3  expected mention    got conflict    Customers on Internet Explorer 11 can no longer log in after the drop.
+HIT   BLND-3  expected conflict   got conflict    BLND-3 is blocked by the accessibility audit.
+HIT   BLND-3  expected irrelevant got irrelevant  Internet Explorer 11 usage fell to 0.4 percent last month.
+HIT   BLND-3  expected conflict   got conflict    Status: Rejected
+HIT   BLND-4  expected support    got support     Two-factor login for admin accounts is mandatory from 1 April.
+HIT   BLND-4  expected support    got support     The security review accepted two-factor login for admin accounts but not for regular users.
+HIT   BLND-4  expected conflict   got conflict    Two-factor login for admin accounts was approved, then reversed after the SSO decision.
+HIT   BLND-4  expected mention    got mention     We don't think two-factor login for admin accounts is needed while SSO is on the roadmap, but it is not decided.
+HIT   BLND-4  expected support    got support     BLND-4 confirmed by the CISO in the 12 May review.
+MISS  BLND-4  expected conflict   got mention     Admin accounts already use hardware keys, so two-factor login adds nothing.
+HIT   BLND-4  expected mention    got mention     Two-factor login for admin accounts: no decision yet.
+HIT   BLND-4  expected irrelevant got irrelevant  Login page copy for admin accounts was approved.
+HIT   BLND-5  expected support    got support     The session timeout will increase to 8 hours from release 7.1.
+HIT   BLND-5  expected conflict   got conflict    Session timeout stays at 30 minutes; 8 hours fails the SOC 2 control.
+HIT   BLND-5  expected support    got support     Increasing the session timeout to 8 hours was signed off by security, provided idle lock stays at 15 minutes.
+HIT   BLND-5  expected mention    got mention     Increasing the session timeout to 8 hours was discussed but nothing was agreed.
+HIT   BLND-5  expected conflict   got conflict    BLND-5 superseded by BLND-12, which sets the timeout to 4 hours.
+HIT   BLND-5  expected conflict   got conflict    Never increase the session timeout beyond 2 hours without a risk sign-off.
+HIT   BLND-5  expected support    got support     Status: Done
+HIT   BLND-5  expected mention    got mention     Can we increase the session timeout to 8 hours for kiosk users only?
+HIT   BLND-6  expected support    got support     The legacy search cluster will be retired on 30 September.
+HIT   BLND-6  expected conflict   got conflict    Retirement of the legacy search cluster is postponed to Q3 because two reports still query it.
+MISS  BLND-6  expected support    got mention     We agreed to retire the legacy search cluster once the reports move.
+HIT   BLND-6  expected conflict   got conflict    BLND-6 was approved in March and reverted in April.
+HIT   BLND-6  expected conflict   got conflict    Do not retire the legacy search cluster before the export tool ships.
+HIT   BLND-6  expected mention    got mention     The legacy search cluster costs 4,000 dollars a month.
+MISS  BLND-6  expected conflict   got irrelevant  Superseded: see the 2026 search plan.
+MISS  BLND-7  expected support    got mention     The partner API adopts GraphQL starting with version 3.
+MISS  BLND-7  expected support    got conflict    We rejected REST-only for the partner API and will adopt GraphQL.
+HIT   BLND-7  expected conflict   got conflict    GraphQL for the partner API was rejected in favour of gRPC.
+HIT   BLND-7  expected mention    got mention     BLND-7: approved in principle, pending a cost estimate.
+HIT   BLND-7  expected conflict   got conflict    Adopting GraphQL for the partner API is no longer under consideration.
+HIT   BLND-7  expected irrelevant got irrelevant  Partner API docs move to the new portal.
+HIT   BLND-7  expected mention    got mention     Whether to adopt GraphQL for the partner API is still an open question.
+HIT   BLND-7  expected mention    got mention     The team is not opposed to adopting GraphQL for the partner API.
+HIT   BLND-8  expected support    got support     Customer uploads are stored in the EU region from 1 July.
+HIT   BLND-8  expected support    got support     Legal approved storing customer uploads in the EU region.
+HIT   BLND-8  expected conflict   got conflict    Customer uploads stay in the US region until the DPA is signed.
+MISS  BLND-8  expected support    got conflict    The earlier rejection of EU storage for customer uploads was reversed; uploads go to the EU region from June.
+HIT   BLND-8  expected mention    got mention     Do customer uploads in the EU region need a separate bucket?
+HIT   BLND-8  expected support    got support     BLND-8 decided: yes.
+HIT   BLND-8  expected conflict   got conflict    Customer uploads in the EU region are not approved for health data.
+HIT   BLND-8  expected irrelevant got irrelevant  The EU region pricing page for customers was agreed.
+HIT   BLND-9  expected support    got support     The onboarding checklist redesign ships on 20 January.
+HIT   BLND-9  expected support    got support     Shipping the onboarding checklist redesign is approved for 10 percent of new accounts first.
+HIT   BLND-9  expected conflict   got conflict    The onboarding checklist redesign was approved on 2 May and superseded on 9 May by the guided tour.
+HIT   BLND-9  expected conflict   got conflict    The onboarding checklist redesign failed usability testing, so the old checklist remains.
+HIT   BLND-9  expected conflict   got conflict    BLND-9 will not ship before the pricing change.
+HIT   BLND-9  expected mention    got mention     Onboarding checklist redesign: decision pending.
+MISS  BLND-9  expected mention    got support     We are leaning towards shipping the onboarding checklist redesign in Q2.
+
+65 of 75 correct (86.7 percent).
+  support    labelled 24, predicted 22, correct 20, precision 0.91, recall 0.83
+  conflict   labelled 26, predicted 28, correct 24, precision 0.86, recall 0.92
+  mention    labelled 18, predicted 18, correct 15, precision 0.83, recall 0.83
+  irrelevant labelled 7, predicted 7, correct 6, precision 0.86, recall 0.86
+  conflicts the rules called support: 0
+  supports the rules called conflict: 2
+
+Confusion (rows = human label, columns = rule output):
+             support    conflict   mention    irrelevant
+  support    20         2          2          0         
+  conflict   0          24         1          1         
+  mention    2          1          15         0         
+  irrelevant 0          1          0          6         

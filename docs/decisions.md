@@ -34,7 +34,7 @@ Choices made while building the first slice on 16 November 2026, each with the a
 
 ## Repository
 
-- `kaifahmed0341/decision-receipt`, public, MIT, at Kaif's request in place of `sami-abdul/decision-receipt` from the plan.
+- `kaifahmed0341/decision-receipt`, public, MIT.
 - The template's `AGENTS.md` was removed. It held generic agent instructions unrelated to this app.
 - Dalil was not reused in this slice, so its license was not checked. Nothing from it is in this repository.
 
@@ -42,7 +42,7 @@ Choices made while building the first slice on 16 November 2026, each with the a
 
 ## Second user
 
-- The reviewer account is `kaifahmed0341+reviewer@gmail.com`, display name "Demo Reviewer", invited from Administration as a plain user with the `jira-users` and `confluence-users` groups and no admin role. Its password was generated with `openssl rand` and lives outside the repository. Rejected a guest account: the plan's case is an ordinary licensed user who lacks access to one page, not a guest.
+- The reviewer account is a second, non-admin test user, display name "Demo Reviewer", invited from Administration as a plain user with the `jira-users` and `confluence-users` groups and no admin role. Its password was generated with `openssl rand` and lives outside the repository. Rejected a guest account: the plan's case is an ordinary licensed user who lacks access to one page, not a guest.
 - The invitation, the sign-up code and the sign-up form ran in a Chrome incognito window so Kaif's own session stayed signed in. No CAPTCHA appeared.
 - The restricted page is a new fixture page, not an edit of an existing one, so DREC-1 to DREC-5 keep their slice 1 behaviour. Its Jira link carries the neutral title "Confluence page", because a link title is visible to everyone who can see the issue.
 
@@ -67,3 +67,42 @@ Choices made while building the first slice on 16 November 2026, each with the a
 ## Fixture state
 
 - DREC-7's page was edited to version 2 for the stale proof and then restored with `edit-page --restore`, so it now sits at version 3 with the original approval. Kaif's recorded check on DREC-7 is therefore stale again, which is the expected behaviour.
+
+# Slice 3, 16 November 2026
+
+## Measurement
+
+- A new 62-sentence development set was written and committed (`49a62bb`) before any rule change, with its labelling conventions stated in the file. The reviewer's three conventions were adopted so the two sets are scored the same way. One old item was relabelled to match them, before tuning, and marked in the file.
+- The rules were tuned on the development set only. The reviewer's 75 sentences were run once, with the rules frozen at `74155d0`, and the result is reported as it came out. Rejected tuning further after that run: the held-out number would stop meaning anything.
+- The held-out set was not fully unseen: the review quotes phrases from about fifteen of its sentences, and its task summaries, conventions and first three sentences were read. docs/rules.md says so next to the number.
+
+## Parsing
+
+- The parser is a small tokenizer over storage format, not a DOM library. Rejected adding a dependency: the Forge bundle stays small and the tokenizer only needs elements, attributes and text.
+- Storage shapes were taken from Confluence itself: a scratch page created from Atlassian Document Format and read back (then deleted), and the DACI, Design decision and Decision log templates read through the template API. Rejected writing shapes from memory, which the review flagged as unverified.
+- Jira issue macros are read as their key, because decision pages often name issues that way. Code, table-of-contents, children and include macros are dropped.
+- A cell with several status lozenges is treated as an unfilled template and decides nothing.
+- The three new fixture pages are written in storage format using the shapes Confluence produced, so the same text drives the live site and the offline tests. Confluence kept the decision item, lozenges, task list and struck-out text when the pages were created.
+
+## Rules
+
+- Direction comes from the first verb of the issue summary, grouped into seven actions with stated opposites. Rejected a word list of "negative" verbs: "keep" is a conflict for a removal task and support for a task that keeps something.
+- The last decisive phrase wins. A refusal applies to its own clause only; an approval may take its object from the rest of the sentence.
+- Conditions ("once", "if", "pending") make support a mention, following the shared convention. This costs a support on the held-out set; it errs on the safe side.
+- A sentence that names the task's whole subject but fewer than 60 percent of the summary words counts only when it also carries a decision signal.
+
+## Records and links
+
+- Records moved to format 2 (summary hash, rules version, unread-link counts, per-page verdicts). Format 1 records are shown as stale with "The app changed how it checks pages", not ignored.
+- The panel's page link is built from the page Confluence returned (`_links.webui`) on the current site, or from the page id. The Jira link's URL is used only to find the page id, and only when it is an https link to this site or a `/wiki/` path, and its id agrees with the `globalId`.
+- A current record is shown in a neutral colour and names the result that was recorded. Rejected keeping green: recording is not a sign-off.
+
+## Deploys
+
+- Two deploys in this slice and one in slice 2 failed once with "BundlerError" and passed on an immediate retry with no change. Treated as a transient platform fault; noted here in case it recurs at the production deploy.
+
+## Not done in this slice
+
+- C1, the judge installation link on a second site, is the next slice.
+- No model and no Rovo module, as instructed.
+- The reviewer account's address and an ownership note were removed from the current files; they remain in earlier commits. Rewriting public history was rejected as out of proportion.
