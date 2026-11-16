@@ -106,7 +106,7 @@ npm install -g @forge/cli
 git clone https://github.com/kaifahmed0341/decision-receipt.git
 cd decision-receipt && npm install
 export FORGE_EMAIL=you@example.com FORGE_API_TOKEN=your-token
-npm test                       # 90 unit tests, no network
+npm test                       # 104 unit tests, no network
 forge register decision-receipt   # your own copy; replaces app.id
 forge deploy -e development
 forge install -e development -p jira -s your-site.atlassian.net
