@@ -23,3 +23,19 @@ The page was then restored (version 3).
 Screenshots second-site-drec-2.png and second-site-drec-6.png were taken headless (Playwright with Chromium), signed in as
 the same account, because the Mac's screen was locked. On this site that account ran the demo script, so it owns the
 restricted page on DREC-6 and correctly sees "Unresolved conflict" with the page quoted.
+
+Rerun after slice 5 (conservative rules, version 5, production deployed 16 November 2026), headless as the same account:
+DREC-1 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+DREC-2 expected [Unresolved conflict] got [Unresolved conflict] PASS
+DREC-3 expected [Decision unclear, read the excerpts] got [Decision unclear, read the excerpts] PASS
+DREC-4 expected [Could not check] got [Could not check] PASS
+DREC-5 expected [No decision pages linked] got [No decision pages linked] PASS
+DREC-6 expected [Unresolved conflict] got [Unresolved conflict] PASS
+DREC-7 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+DREC-8 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+DREC-9 expected [Unresolved conflict] got [Unresolved conflict] PASS
+DREC-10 expected [Evidence found on every linked page] got [Evidence found on every linked page] PASS
+10 of 10 as expected
+DREC-3 now shows "Decision unclear, read the excerpts" (second-site-drec-3-unclear.png).
+
+FIXTURE_PROJECT_KEY=DRX on the same site: project "Decision Receipt Demo (DRX)", space DRXDEMO; DRX-2 Unresolved conflict PASS, DRX-8 Evidence found on every linked page PASS.

@@ -128,3 +128,30 @@ Choices made while building the first slice on 16 November 2026, each with the a
 ## Demo setup
 
 - The fixture script now runs with only Node.js (`node scripts/fixtures.mjs`, no `npm install`), asks for site, email and token when they are not set, hides the token, checks credentials and products before changing anything, and accepts FIXTURE_PROJECT_KEY. Rejected an in-app "load demo data" page: it would need write scopes for Jira and Confluence, which the read-only app does not have.
+
+# Slice 5, 16 November 2026
+
+## Conservative rules
+
+- After two outside sets in a row showed phrase rules failing on free prose (review 2: 39 of 68, 5 conflicts read as support), the rules decide only on strong evidence and leave the rest as "decision unclear" with excerpts. Rejected tuning more phrases: each new set brings new phrasings, and a judge's own pages are a new set.
+- The rules were frozen at `cc20344` before either blind set was run on them; both runs are kept. Two fixes were then made after reading the three wrong conflict calls, kept apart as post-hoc runs. Both fixes can only turn a decision into "unclear".
+- The date rule is removed: a date never decides anything.
+- "Mentioned in" links are left out as evidence and counted in a note. Rejected reading them: anyone who can edit any page could add evidence by naming an issue.
+- A decided status with no known direction is unclear; refusing the opposite of the task is unclear; an approval for a different amount than the task is unclear.
+
+## Rovo agent
+
+- Page text reaches the agent only inside `<page-text>` delimiters, in fields named untrustedTitle and untrustedQuote, capped at three quotes a page and 280 characters a quote. The old prompt rule that let the agent add "Rovo's reading" was removed; it may only name the rule that fired. Rejected keeping a labelled reading: review 2 showed it is the natural channel for planted text.
+- Proved on the production install on the demo site with a planted instruction on a linked page, as a second, non-admin user in a headless browser: the agent quoted the planted line as page text and refused to say the task was cleared. The demo site was moved from the development install to production for this; the planted line stays on the demo site's copy of "Release review: 4.2 readiness" only, not in the fixture script.
+- The reviewer account was invited to the demo site as a plain Jira and Confluence user for this test.
+- Actions answer only a signed-in user. The README says an answer carries the asker's access wherever it is copied; refusing automation entirely was rejected because a rule actor is also a signed-in user and cannot be told apart.
+
+## MCP
+
+- The rovo:mcp module and skill/SKILL.md were removed. Exercising them needs Rovo Studio's interface, which could not be driven while the Mac was locked and in use, and the plan forbids claiming what was not run. Adding them back is a manifest change once someone can prove them.
+
+## Judge path
+
+- FIXTURE_PROJECT_KEY now also gives its own project name and space, after a live run showed Jira refuses a second project with the same name.
+- The README now names the Allow access screen, the plain API token, and that a private window must be signed in as the second user. A missing Confluence connection now says so instead of "Request interrupted".
+- The reviewer's address in git history (review 2, L6) stays: rewriting public history is out of proportion.

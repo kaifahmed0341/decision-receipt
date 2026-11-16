@@ -24,11 +24,13 @@ It holds no page text, no page titles, no issue text and no names. Records are n
 
 ## Where data goes
 
-Nowhere outside Atlassian. The app runs on Atlassian's Forge platform, declares no outside network access and calls no outside service or model. Rovo, when used, runs on the customer's own Atlassian site under Atlassian's terms.
+Nowhere outside Atlassian. The app runs on Atlassian's Forge platform, declares no outside network access and calls no outside service or model of its own.
+
+When someone uses the Decision receipt agent in Rovo, the receipt the agent reads, including quotes from pages that person can open, is processed by Rovo, Atlassian's AI service, which runs on Atlassian's AI platform and its model providers under Atlassian's AI terms. The app adds nothing to that beyond the receipt.
 
 ## How long, and deletion
 
-Records stay until the app is uninstalled from the site, when Forge storage for the installation is removed. To have a record removed earlier, open an issue at https://github.com/kaifahmed0341/decision-receipt/issues.
+Records stay until the app is uninstalled from the site, when Forge storage for the installation is removed. The app does not yet remove a person's records automatically when their Atlassian account is closed (Atlassian's personal data reporting is the usual route, and is not implemented). To have a record removed, open an issue at https://github.com/kaifahmed0341/decision-receipt/issues.
 
 ## Contact
 

@@ -1,123 +1,65 @@
 # How a page is read, and how well it works
 
-Decision receipt decides what a linked page says about a task with fixed rules. There is no model. This page states how a page is read, the rules, what they get right and wrong on two labelled sets, and where they fail.
+Decision receipt decides what a linked page says about a task with fixed rules, not a model. Since rules version 4 the rules are **conservative**: they say "supports" or "conflicts" only on strong evidence, and leave everything else to the reader as **"decision unclear"**, with the excerpts shown. This page states the contract, the rules, the measured precision, recall and abstention on two blind sets written by outside reviewers, and the limits.
 
-Code: [`src/lib/storage.js`](../src/lib/storage.js) reads the page, [`src/lib/direction.js`](../src/lib/direction.js) finds which way a sentence points, [`src/lib/classify.js`](../src/lib/classify.js) applies the rules. The rules carry a version number (`RULES_VERSION`, now 3); a recorded check made under another version is reported as stale.
+Code: [`src/lib/storage.js`](../src/lib/storage.js) reads the page, [`src/lib/direction.js`](../src/lib/direction.js) finds which way a sentence points, [`src/lib/classify.js`](../src/lib/classify.js) applies the rules (`RULES_VERSION` 5). A recorded check made under another rules version is reported as stale.
+
+## The contract
+
+A page **supports** or **conflicts with** a task only on one of these:
+
+1. **A structured decision field**: a status lozenge or a "Status" row on a Decision or DACI page; a bare status word (Accepted, Rejected, Superseded, Deprecated, Proposed) under an ADR's "Status" heading; a status column in a decision log; a decision item marked decided. The field must be tied to the task: its scope names the issue key, or the decided statement names the task's own action. A decided status whose direction is unknown is "decision unclear".
+2. **An explicit decision sentence**: a clear decision phrase (approved, agreed, decided to, rejected, decided not to, superseded, rolled back, parked, cannot...) in a clause that names the issue key or the task's own action, with the direction resolved. Approving the opposite of the task ("agreed to keep the endpoint" for a removal task) is a conflict. A partial approval of the task ("for staff accounts only", "with exception", "as a first step") is a conflict.
+
+Everything else that is about the task is **decision unclear**: plans and dates without a decision phrase, statements of the current state, hedged or conditional approvals, approvals for a different amount, approvals that do not say for what, refusals of the opposite, double negatives, questions, opinions. The panel shows these excerpts and says so; it does not guess.
+
+Headlines: **Unresolved conflict** if any page conflicts; **Evidence found on every linked page** only when every link was read and every page supports on strong evidence; **Decision unclear, read the excerpts** when a page has excerpts but no strong evidence; **Evidence incomplete** when some pages support and others say nothing or could not be read; **Missing evidence**, **Could not check**, **No decision pages linked** otherwise. The panel never says a task is approved.
 
 ## Reading the page
 
-Confluence stores pages in an XML-like storage format. The parser turns it into units a reader sees as one thing:
+Confluence's storage format is turned into units a reader sees as one thing: paragraphs and list items (split into sentences), headings, table rows (cells joined with " | "), tasks with their done state, decision items with their state, status lozenges as values, Jira issue macros as their key, and the titles of expand and panel macros. What a reader cannot see is dropped: editor placeholders, struck-out and deleted text, hidden macros, macro parameters, the fallback copy of native decision items, and text styled white, transparent, hidden, zero-size or zero-opacity. Samples Confluence produced are in [`test/storage-samples`](../test/storage-samples).
 
-- **Paragraphs, list items, headings**: split into sentences. A short label such as "Decision: go." stays with the sentence after it, and common abbreviations do not split.
-- **Table rows**: one unit, cells joined with " | ". A table's header row names its columns, so a "Status" column is read as the row's status.
-- **Tasks**: the task text with its done state (`complete` or `incomplete`).
-- **Decision items** (Confluence's native decisions): the text with its state (`DECIDED`).
-- **Status lozenges**: their label is read as a value. A cell offering several lozenges, as an unfilled template does ("Not started / In progress / Complete"), decides nothing.
-- **Jira issue macros**: read as the issue key they show.
+Status statements count only for their own scope: their table, their headed section, the whole page for an ADR "Status" section, and on a page with no headings the paragraph just before them. A scope that names another issue key instead of this one is ignored; one that names both is "unclear". Names of standards (ISO-8601, AES-256, SHA-256, RFC-...) are not taken for issue keys.
 
-Dropped, because a reader does not see them in view mode: editor placeholders, struck-out and deleted text, macros marked hidden, macro parameters, the fallback copy Confluence stores beside native decision items, and code, navigation and include macros.
-
-The shapes were taken from pages Confluence produced on the test site and from its own DACI, Design decision and Decision log templates. Samples are in [`test/storage-samples`](../test/storage-samples).
-
-## Which units are about the task
-
-A sentence or unit is about the task when:
-
-1. it names the issue key, or a key the issue had before it moved (from the issue's change history); or
-2. it contains at least 60 percent of the significant words of the summary, and never fewer than two. Words are compared by a light stem, so "retire", "retiring" and "retirement" match; or
-3. it names the task's whole subject, the words after the summary's verb up to the first preposition ("the status page" in "Move the status page to a managed provider"), **and** carries a decision signal. Without a signal such a sentence is ignored.
-
-**Status lines are scoped.** "Status: Approved", a "Status | DECIDED" row or an "Outcome" line applies only to its own scope: the table it sits in, or the section under its heading (with the page title for the first section). It counts only when that scope is about the task. If the scope names another issue key and not this one, the status is ignored. If it names both, the status is a mention.
-
-## Which way a sentence points
-
-The task's action comes from the first verb of its summary: remove (retire, drop, archive...), keep (stay, remain, retain...), enable (add, adopt, ship, turn on...), disable (turn off...), increase (raise, extend...), decrease (lower, reduce...) or change (move, migrate, switch, upgrade...). Each action has opposites: keeping things as they are opposes every change, lowering opposes raising, and so on.
-
-## Rules for one sentence or unit
-
-1. Ends with "?": **mention**.
-2. Says no decision exists ("nothing was agreed", "no decision", "nobody has decided"): **mention**.
-3. States an opinion ("we don't think", "I believe"): **mention**.
-4. Find the decision phrases and keep the **last** one:
-   - supporting: "approved", "agreed", "decided to", "confirmed", "go ahead", "green light", "signed off", "mandatory", "Decision:" or "Agreed:" as a label, ": yes" at the end;
-   - blocking: "will not", "never", "rejected", "decided not to", "chose not to", "deferred", "on hold", "blocked", "not approved" and similar;
-   - reversal: "superseded", "reverted", "rolled back", "replaced by", "overturned", "reversed", "withdrawn", "no longer".
-   A supporting phrase with "not", "never" or "no" in the three words before it blocks instead.
-5. If the last phrase supports: it is a **conflict** when its clause (or else the sentence) names the opposite of the task ("agreed to keep the endpoint"); a **conflict** when its clause limits it ("for staff accounts only", "first phase", "except"); a **mention** when its clause hedges ("in principle", "pending", "probably", "once", "if"); otherwise **support**.
-6. If the last phrase blocks or reverses: **support** when its own clause names the opposite of the task ("the proposal to keep it was rejected"); otherwise **conflict**.
-7. With no decision phrase: **conflict** if the sentence states the opposite of the task ("the limit stays at 500 MB"); **mention** if it hedges; **support** if it states the task's own action as planned or done ("will be retired on 15 April", "was moved") or carries a date or release ("from 1 February", "in release 4.2"); for a task that keeps something, stating that it stays is support. Otherwise **mention**.
-
-For units: a table row with a status value takes that value, turned round if the row decides the opposite of the task. An open task never counts as support. A done task that says "Approve ..." counts as support. A decision item marked decided that states the task is support, and is a conflict if it states the opposite.
-
-## Rules for a page and an issue
-
-- A page **conflicts** if any finding conflicts; **supports** if at least one supports and none conflicts; otherwise the decision is **missing**.
-- Across links: any conflict gives **Unresolved conflict**. **Evidence found on every linked page** needs every link to be read and every page to support; a link to another site, a short link, an untrusted link or a link past the tenth keeps it at **Evidence incomplete**. Pages read with no support give **Missing evidence**. Nothing read gives **Could not check**.
-
-The panel never says a task is approved.
+Links Jira adds by itself when a page mentions an issue ("mentioned in") are not decision links: they are counted in a note and not read as evidence.
 
 ## Measured
 
-Two sets, labelled by hand with the same conventions: a partial approval that withholds part of the task, or a block that stops it now, is a conflict; an approval in principle or pending a condition is a mention; a stated plan with a date is support.
+Labels: support, conflict, mention (about the task, no decision), irrelevant. A "decision unclear" result counts as mention. **Abstention** is the share of items a reader labelled support or conflict that the rules left undecided.
 
-### Development set: tuned on, so it flatters
+### Rules version 4, frozen, each set run once
 
-[`fixtures/labelled-excerpts.json`](../fixtures/labelled-excerpts.json) (32 sentences, one relabelled to the shared convention before any change) and [`fixtures/dev-excerpts.json`](../fixtures/dev-excerpts.json) (62 new sentences over eight new tasks, written before any slice 3 rule change). 94 in all. The rules were tuned on this set.
-
-| | Correct | Conflicts read as support |
-|---|---|---|
-| Slice 2 rules, before tuning | 50 of 94 (53.2 percent) | 8 |
-| Slice 3 rules | 92 of 94 (97.9 percent) | 0 |
-
-| Label | Labelled | Predicted | Correct | Precision | Recall |
+| Set | Items | Conflicts read as support | Support precision / recall | Conflict precision / recall | Abstention |
 |---|---|---|---|---|---|
-| support | 30 | 30 | 29 | 0.97 | 0.97 |
-| conflict | 34 | 35 | 34 | 0.97 | 1.00 |
-| mention | 18 | 17 | 17 | 1.00 | 0.94 |
-| irrelevant | 12 | 12 | 12 | 1.00 | 1.00 |
+| Review 2, 68 pages in other writing styles ([run](eval/heldout-review-2.txt)) | 68 | **0** | 1.00 / 0.36 | 0.88 / 0.32 | 64% (30 of 47) |
+| Review 1, 75 sentences ([run](eval/heldout-review-1-v4.txt)) | 75 | **0** | 0.92 / 0.46 | 0.88 / 0.58 | 46% (23 of 50) |
 
-Full output: [`docs/eval/dev-set.txt`](eval/dev-set.txt).
+### Rules version 5, after two post-hoc fixes
 
-### Held-out set: the honest number
+The three wrong conflict calls above were read, and two fixes were added that can only turn a decision into "unclear": a reversal of a rollback or rejection, and a refusal followed in the same sentence by a commitment to the task. These numbers are therefore not blind.
 
-The reviewer's 75 sentences over nine tasks, written by someone other than the rule author. The rules were frozen at commit `74155d0`, the set was run once, and nothing was changed after it. Full output: [`docs/eval/heldout-review-1.txt`](eval/heldout-review-1.txt).
-
-| | Correct | Conflicts read as support |
-|---|---|---|
-| Slice 2 rules (reviewer's run) | 45 of 75 (60.0 percent) | 3 |
-| Slice 3 rules | **65 of 75 (86.7 percent)** | **0** |
-
-| Label | Labelled | Predicted | Correct | Precision | Recall |
-|---|---|---|---|---|---|
-| support | 24 | 22 | 20 | 0.91 | 0.83 |
-| conflict | 26 | 28 | 24 | 0.86 | 0.92 |
-| mention | 18 | 18 | 15 | 0.83 | 0.83 |
-| irrelevant | 7 | 7 | 6 | 0.86 | 0.86 |
-
-Confusion, rows are the reviewer's label, columns the rule output:
-
-| | support | conflict | mention | irrelevant |
+| Set | Conflicts read as support | Support precision / recall | Conflict precision / recall | Abstention |
 |---|---|---|---|---|
-| support | 20 | 2 | 2 | 0 |
-| conflict | 0 | 24 | 1 | 1 |
-| mention | 2 | 1 | 15 | 0 |
-| irrelevant | 0 | 1 | 0 | 6 |
+| Review 2 ([run](eval/posthoc-review-2-v5.txt)) | 0 | 1.00 / 0.36 | 1.00 / 0.32 | 66% (31 of 47) |
+| Review 1 ([run](eval/posthoc-review-1-v5.txt)) | 0 | 0.92 / 0.46 | 0.94 / 0.58 | 48% (24 of 50) |
+| Development set, 94 sentences, tuned on ([run](eval/dev-set.txt)) | 0 | 1.00 / 0.47 | 0.96 / 0.68 | 41% (26 of 64) |
 
-**How held out it really was.** The set file itself was not opened before the run, apart from its labelling conventions, its nine task summaries and its first three sentences. But the review that came with it quotes phrases from about fifteen of the 75 sentences in its miss analysis ("agreed to keep", "approved ... reverted", "approved for staging only", "nothing was agreed", "approved in principle, pending", "stays", "remains", "decided not to", "will be retired on", "is mandatory from"), and several rule changes target exactly those phrase types. Read 86.7 percent as an upper bound on what a fresh set would give, not as an independent score. The next measurement should use a set neither the author nor this review has seen.
+### What this means
 
-## Known limits, with the held-out misses that show them
+- When the panel says "supports" or "conflicts", it is right about nine times in ten or better on both outside sets, and it did not once call a conflict support.
+- It says "decision unclear" for roughly half to two thirds of the pages a careful reader could decide. Free prose that decides without a clear decision phrase ("nightly backups -> object storage", "the limit stays at 500 MB", "will be retired on 15 April") lands there. That is the price of the precision, and the panel says so in its headline instead of guessing.
+- How blind each set was: review 1's set had been run before (45 of 75 on the slice 2 rules, and 65 of 75 on rules version 3, which were shaped on phrases that review quoted); review 2's items were not opened before the frozen run, but its findings quote parts of about a dozen of them and some rule additions in version 4 (exception, first step, rolled ... back, parked, cannot, ADR status sections) answer those findings.
+- Review 2 measured the previous, looser rules (version 3) on its set at 39 of 68, with 5 conflicts read as support. That result is why the rules became conservative.
 
-- **Contrast inside one sentence is read clause by clause, not by meaning.** "We rejected REST-only for the partner API and will adopt GraphQL" is support, but "rejected" is the last decisive phrase and its clause also contains the task's own action, so it reads as a conflict. "The earlier rejection of EU storage ... was reversed; uploads go to the EU region from June" is support, but "reversed" is the last decisive phrase and the rules do not see that it reverses a rejection; the task "Store customer uploads..." also has no action verb the rules know, so direction cannot help.
-- **A condition reads as a hedge.** "We agreed to retire the cluster once the reports move" is labelled support; "once" makes it a mention. That errs on the safe side.
-- **A reason is not a decision.** "Admin accounts already use hardware keys, so two-factor login adds nothing" argues against the task without a decision phrase, so it stays a mention.
-- **Leaning is not a hedge word yet.** "We are leaning towards shipping ... in Q2" reads as a dated plan, so support. Words like "leaning towards" or "favour" are missing from the hedges.
-- **The object of an approval is not checked unless it is an action.** "The mobile team agreed the colours with design" after naming the issue reads as support.
-- **A neighbouring subject can match.** "Dark mode on the web app is rejected" matches a task about dark mode for the mobile app, because the task's subject words, "dark mode", both appear and the sentence carries a decision phrase. It reads as a conflict.
-- **Side effects read as reversals.** "Customers on Internet Explorer 11 can no longer log in after the drop" describes a consequence; "no longer" reads as a reversal.
-- **A bare status line with a reference is only scoped on a page.** "Superseded: see the 2026 search plan" alone, with no section, is not tied to the task. On a page, under a heading about the task, it would be.
-- **Long summaries still make relevance strict.** The 60 percent rule needs more words as the summary grows; the subject rule helps only when the sentence also carries a decision signal.
+## Known limits
+
+- **Recall is low by design.** Decisions written as plans, dates, arrows or bare statements are "unclear". The reader sees the excerpts.
+- **Direction needs a known verb.** A task whose summary starts with a verb outside the action lists (fix, translate, investigate, document) has no direction, so only key-naming sentences and fields can decide it.
+- **A page's history counts.** A page that rejected a task in March and approved it in November is a conflict: any conflict on a page wins. That errs on the safe side.
+- **Consequences can read as reversals.** "Customers can no longer log in after the drop" reads "no longer" as a reversal.
+- **Relevance uses words.** A sentence must name the issue key, use 60 percent of the summary's words, or name the task's whole subject with a decision phrase. A decision section on a page whose title is about the task is read too.
 - **Only text and the fields above are read.** Images, attachments, page properties reports and comments are not.
 
 ## Why rules and not a model
 
-The accepted plan rules out paid outside inference so far. Rules also make each verdict explainable next to its excerpt, and they never invent text: the panel shows the sentence and the rule that fired, so the reviewer can check the work. Whether to add a Rovo step on top is a separate decision, not taken in this slice.
+Rules make each verdict explainable next to its excerpt and never invent text, and conservative rules make a decided verdict trustworthy. The Rovo agent reports the same receipt and is told it may not change or second-guess a label; it adds no reading of its own.

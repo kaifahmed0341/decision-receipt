@@ -19,7 +19,7 @@
  * if DREC is taken on your site. FORGE_EMAIL and FORGE_API_TOKEN are accepted too.
  */
 import { createInterface } from 'node:readline';
-import { PROJECT as BASE_PROJECT, SPACE, PAGES as BASE_PAGES, ISSUES } from '../fixtures/data.mjs';
+import { PROJECT as BASE_PROJECT, SPACE as BASE_SPACE, PAGES as BASE_PAGES, ISSUES } from '../fixtures/data.mjs';
 
 /**
  * Asks questions on the terminal through one shared reader, so typed or pasted answers
@@ -76,7 +76,11 @@ if (!/^[A-Z][A-Z0-9]{1,9}$/.test(KEY)) {
   process.exit(2);
 }
 const rekey = (s) => s.replace(/\bDREC-(\d+)/g, `${KEY}-$1`);
-const PROJECT = { ...BASE_PROJECT, key: KEY };
+// Jira project names are unique on a site, so another key also gets its own name.
+const PROJECT = KEY === BASE_PROJECT.key ? BASE_PROJECT : { ...BASE_PROJECT, key: KEY, name: `${BASE_PROJECT.name} (${KEY})` };
+// With another project key the pages also go to their own space, so two people sharing a
+// site never reuse each other's pages, whose text names the other key.
+const SPACE = KEY === BASE_PROJECT.key ? BASE_SPACE : { key: `${KEY}DEMO`, name: `${BASE_SPACE.name} (${KEY})` };
 const PAGES = Object.fromEntries(
   Object.entries(BASE_PAGES).map(([k, p]) => [k, { ...p, body: rekey(p.body), ...(p.editedBody ? { editedBody: rekey(p.editedBody) } : {}) }])
 );
@@ -239,7 +243,12 @@ async function linkPage(issueKey, pageId, title) {
 /** Checks the credentials and the products before changing anything. */
 async function preflight() {
   const me = await call('GET', '/rest/api/3/myself');
-  if (me.status === 401) throw new Error('The site refused the email and API token. Check both, and that the token belongs to this email.');
+  if (me.status === 401) {
+    throw new Error(
+      'The site refused the email and API token. Check both, and that the token belongs to this email. ' +
+        'Use a plain token from "Create API token", not "Create API token with scopes": scoped tokens do not work with this script.'
+    );
+  }
   if (me.status === 404 || me.status >= 500) throw new Error(`No Jira found at ${site}. Check the site address.`);
   if (me.status !== 200) throw new Error(`Jira answered ${me.status} for your account.`);
   const wiki = await call('GET', '/wiki/api/v2/spaces?limit=1');
