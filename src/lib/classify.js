@@ -83,12 +83,14 @@ const NEGATION = /\b(?:not|never|no|isn['’]t|wasn['’]t|aren['’]t|weren['�
 
 /**
  * Normalises a word for comparison: lower case, letters and digits only, and a
- * trailing plural "s" removed from longer words so "PDFs" matches "pdf".
+ * trailing plural "s" removed from words of four letters or more so "PDFs" matches "pdf".
+ * The same folding runs on both the summary and the page, so a word like "status"
+ * becomes "statu" on both sides and still matches.
  * @param {string} word
  */
 export function normaliseWord(word) {
   let w = String(word).toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (w.length > 4 && w.endsWith('s') && !w.endsWith('ss')) w = w.slice(0, -1);
+  if (w.length >= 4 && w.endsWith('s') && !w.endsWith('ss')) w = w.slice(0, -1);
   return w;
 }
 
@@ -101,6 +103,8 @@ export function normaliseWord(word) {
 export function summaryTerms(summary) {
   const terms = [];
   for (const raw of String(summary || '').split(/[^A-Za-z0-9]+/)) {
+    // Check stopwords before folding plurals, so "this" is dropped rather than becoming "thi".
+    if (STOPWORDS.has(raw.toLowerCase())) continue;
     const w = normaliseWord(raw);
     if (w.length < 3 || STOPWORDS.has(w) || /^\d+$/.test(w)) continue;
     if (!terms.includes(w)) terms.push(w);

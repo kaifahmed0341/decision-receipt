@@ -42,7 +42,7 @@ const Excerpt = ({ excerpt }) => (
   <Box xcss={quoteBox}>
     <Stack space="space.050">
       <Inline space="space.100" alignBlock="center">
-        <Lozenge appearance={KIND_APPEARANCE[excerpt.kind]}>{excerpt.kindLabel}</Lozenge>
+        <Lozenge appearance={KIND_APPEARANCE[excerpt.kind]} maxWidth={280}>{excerpt.kindLabel}</Lozenge>
         {excerpt.truncated ? <Text size="small">Cut at 400 characters</Text> : null}
       </Inline>
       <Text>"{excerpt.text}"</Text>
@@ -74,7 +74,7 @@ const PageEvidence = ({ page, index }) => {
           <Link href={page.url} openNewTab>
             {page.title}
           </Link>
-          <Lozenge appearance={page.verdictAppearance} isBold>
+          <Lozenge appearance={page.verdictAppearance} isBold maxWidth={280}>
             {page.verdictLabel}
           </Lozenge>
         </Inline>
@@ -138,7 +138,7 @@ const App = () => {
         <Inline space="space.100" alignBlock="center" spread="space-between">
           <Inline space="space.100" alignBlock="center">
             <Heading size="small">{receipt.issue.key}</Heading>
-            <Lozenge appearance={receipt.overallAppearance} isBold>
+            <Lozenge appearance={receipt.overallAppearance} isBold maxWidth={360}>
               {receipt.overallLabel}
             </Lozenge>
           </Inline>

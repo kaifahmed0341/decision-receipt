@@ -10,7 +10,7 @@
   },
   "scripts": {
     "lint": "eslint src/**/*",
-    "test": "node --test test/",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test test/*.test.mjs",
     "fixtures": "node scripts/fixtures.mjs"
   },
   "devDependencies": {
