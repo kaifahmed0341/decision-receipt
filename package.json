@@ -1,0 +1,27 @@
+{
+  "name": "decision-receipt",
+  "version": "0.1.0",
+  "description": "Forge app: a read-only Jira issue panel that checks a task against its linked Confluence decision pages.",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "eslint src/**/*",
+    "test": "node --test test/",
+    "fixtures": "node scripts/fixtures.mjs"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0"
+  },
+  "dependencies": {
+    "@forge/api": "8.5.0",
+    "@forge/bridge": "7.3.0",
+    "@forge/react": "12.5.0",
+    "@forge/resolver": "2.0.2",
+    "react": "^18.2.0"
+  }
+}
