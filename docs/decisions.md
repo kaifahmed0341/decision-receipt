@@ -29,7 +29,7 @@ Choices made while building the first slice on 16 November 2026, each with the a
 ## Fixtures
 
 - Links are Jira remote links with application type `com.atlassian.confluence`, created through REST. That is the shape Jira's own "Link Confluence page" action produces, and Jira recognised them as native links. Rejected the Confluence page "Jira issue" macro, which links the other way and is harder to read as the viewer.
-- The deleted-page case uses a page moved to the trash. As the page owner, Confluence answers 200 with status `trashed`, so the panel shows "Deleted or archived". A viewer without access gets 404 and sees "Not available to you"; that case is covered by unit tests but not yet proven on the site, because it needs a second user.
+- The deleted-page case uses a page moved to the trash. As the page owner, Confluence answers 200 with status `trashed`, so the panel shows "Deleted or archived". A viewer without access gets 404 and sees "Not available to you"; slice 2 proved the 404 path live with a second user and a restricted page (DREC-6).
 - Fixture text lives in `fixtures/data.mjs` and the tests run the full receipt over it, so the expected verdicts are checked on every test run.
 
 ## Repository
@@ -37,3 +37,33 @@ Choices made while building the first slice on 16 November 2026, each with the a
 - `kaifahmed0341/decision-receipt`, public, MIT, at Kaif's request in place of `sami-abdul/decision-receipt` from the plan.
 - The template's `AGENTS.md` was removed. It held generic agent instructions unrelated to this app.
 - Dalil was not reused in this slice, so its license was not checked. Nothing from it is in this repository.
+
+# Slice 2, 16 November 2026
+
+## Second user
+
+- The reviewer account is `kaifahmed0341+reviewer@gmail.com`, display name "Demo Reviewer", invited from Administration as a plain user with the `jira-users` and `confluence-users` groups and no admin role. Its password was generated with `openssl rand` and lives outside the repository. Rejected a guest account: the plan's case is an ordinary licensed user who lacks access to one page, not a guest.
+- The invitation, the sign-up code and the sign-up form ran in a Chrome incognito window so Kaif's own session stayed signed in. No CAPTCHA appeared.
+- The restricted page is a new fixture page, not an edit of an existing one, so DREC-1 to DREC-5 keep their slice 1 behaviour. Its Jira link carries the neutral title "Confluence page", because a link title is visible to everyone who can see the issue.
+
+## Recorded checks and stale detection
+
+- A check is recorded only when the reviewer selects **Record this check**. Rejected recording every check automatically: the stale warning would vanish on the next open, which defeats "require a fresh check".
+- Records are per site, issue and user. Rejected one shared record per issue: it would let one reviewer's record carry page ids, versions and verdicts for pages another reviewer cannot open.
+- A record stores page id, read status, version and verdict only. Excerpts are not stored; the panel always shows a live read.
+- Recording reads the pages again on the server and refuses if their state differs from what the panel showed (compared by a hash), or if any page was rate limited, interrupted or skipped for time. Pages the viewer cannot open and deleted pages may be recorded as such, because that is a stable state.
+- Records use `@forge/kvs` 2.1.2, the current key-value package, with the `storage:app` scope. Adding the scope forced a major version on the development environment (`--approve MAJOR_VERSION_RULE`) and an install upgrade in both products.
+
+## Failure handling
+
+- An exception from a page request, other than the platform's consent error, is shown as "Request interrupted" for that page. Rejected failing the whole panel: one bad page should not hide the evidence from the others.
+- No new page read starts after 18 seconds; later pages show "Not read". Forge resolvers stop at about 25 seconds, and a cut-off panel would show nothing.
+- Rate limits and interruptions are tested with faked responses only. Triggering a real rate limit on a shared developer site would affect other work on it.
+
+## Measuring the rules
+
+- 32 hand-labelled fictional sentences, labelled before the first run and not changed after it. Result 24 of 32. Rejected tuning the rules against this set in the same slice: the numbers would stop meaning anything. Any rule change in a later slice should come with new sentences it has not seen.
+
+## Fixture state
+
+- DREC-7's page was edited to version 2 for the stale proof and then restored with `edit-page --restore`, so it now sits at version 3 with the original approval. Kaif's recorded check on DREC-7 is therefore stale again, which is the expected behaviour.
