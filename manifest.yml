@@ -7,12 +7,84 @@ modules:
       render: native
       title: Decision receipt
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  rovo:agent:
+    - key: decision-receipt-agent
+      name: Decision receipt
+      description: Shows what the Confluence decision pages linked to a Jira issue say about it, with exact quotes, versions and read times. Read-only. Never approves work.
+      prompt: resource:agent;prompt.txt
+      conversationStarters:
+        - Show the decision receipt for this issue
+        - Which linked page conflicts with this issue, and why?
+        - Explain the label on each linked decision page
+      actions:
+        - list-linked-decisions
+        - get-page-evidence
+        - explain-page-label
+  rovo:mcp:
+    - key: decision-receipt-mcp
+      name: Decision receipt
+      tools:
+        - list-linked-decisions
+        - get-page-evidence
+        - explain-page-label
+  action:
+    - key: list-linked-decisions
+      name: List linked decisions
+      function: list-fn
+      actionVerb: GET
+      description: Decision receipt for a Jira issue, read as the user. Overall result, and each linked Confluence decision page's label, version and read time. Also the user's recorded check and whether it is stale.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: false
+          description: The Jira issue key, for example DREC-2. Leave empty to use the issue the user is viewing.
+    - key: get-page-evidence
+      name: Get page evidence
+      function: evidence-fn
+      actionVerb: GET
+      description: The exact sentences, rows, tasks or statuses one linked decision page gave the Decision receipt for a Jira issue, each with its label and rule, plus page version and read time.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: false
+          description: The Jira issue key, for example DREC-2. Leave empty to use the issue the user is viewing.
+        page:
+          title: Page
+          type: string
+          required: false
+          description: Which linked page, as its number in the receipt (1, 2, ...) or part of its title. Needed when the issue links more than one page.
+    - key: explain-page-label
+      name: Explain page label
+      function: explain-fn
+      actionVerb: GET
+      description: Why the Decision receipt rules gave one linked decision page its label, finding by finding, with the rules in plain words.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: false
+          description: The Jira issue key, for example DREC-2. Leave empty to use the issue the user is viewing.
+        page:
+          title: Page
+          type: string
+          required: false
+          description: Which linked page, as its number in the receipt (1, 2, ...) or part of its title.
   function:
     - key: resolver
       handler: index.handler
+    - key: list-fn
+      handler: index.listLinkedDecisions
+    - key: evidence-fn
+      handler: index.getPageEvidence
+    - key: explain-fn
+      handler: index.explainPageLabel
 resources:
   - key: main
     path: src/frontend/index.jsx
+  - key: agent
+    path: agent
 permissions:
   scopes:
     # Read the issue summary and its remote links, as the current user.

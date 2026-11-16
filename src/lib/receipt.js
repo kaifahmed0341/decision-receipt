@@ -216,5 +216,5 @@ export async function buildReceipt(issueKey, siteHost, http, { budgetMs = TIME_B
     pages,
     notes: linkNotes(counts),
   };
-  return { receipt, fingerprint, summary: issue.summary, unread: counts };
+  return { receipt, fingerprint, summary: issue.summary, unread: counts, issueId: issueBody.id ? String(issueBody.id) : null };
 }

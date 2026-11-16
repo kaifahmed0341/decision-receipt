@@ -78,7 +78,7 @@ function describeRecord(full) {
 export async function loadReview(ctx, http, store) {
   const built = await buildReceipt(ctx.issueKey, ctx.siteHost, http);
   const { receipt, fingerprint } = built;
-  const record = ctx.accountId ? await store.get(keyFor(ctx)) : undefined;
+  const record = ctx.accountId ? await store.get(keyFor({ ...ctx, issueId: ctx.issueId || built.issueId })) : undefined;
   const cmp = compareWithRecord(record, fingerprint, readableTitles(receipt), contextOf(built));
   return {
     receipt,
@@ -97,8 +97,9 @@ export async function loadReview(ctx, http, store) {
  * @param {string} seenHash the fingerprintHash the reviewer's panel showed
  */
 export async function recordReview(ctx, http, store, seenHash) {
-  const key = keyFor(ctx);
+  keyFor(ctx); // refuse early when there is no account
   const built = await buildReceipt(ctx.issueKey, ctx.siteHost, http);
+  const key = keyFor({ ...ctx, issueId: ctx.issueId || built.issueId });
   const { receipt, fingerprint } = built;
   const context = contextOf(built);
   const hash = fingerprintHash(fingerprint, built.summary, built.unread);

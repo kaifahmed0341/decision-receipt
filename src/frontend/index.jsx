@@ -21,7 +21,7 @@ import ForgeReconciler, {
   Text,
   xcss,
 } from '@forge/react';
-import { invoke } from '@forge/bridge';
+import { invoke, rovo } from '@forge/bridge';
 
 const pageBox = xcss({
   borderColor: 'color.border',
@@ -128,6 +128,22 @@ const App = () => {
   const [state, setState] = useState({ loading: true });
   const [recording, setRecording] = useState(false);
   const [note, setNote] = useState(null);
+  const [rovoNote, setRovoNote] = useState(null);
+
+  // Opens Rovo chat with this app's agent, asking about this issue. The agent reads the
+  // same receipt through read-only actions; on sites without Rovo the button says so.
+  const askRovo = useCallback(() => {
+    const key = state.result?.receipt?.issue?.key;
+    setRovoNote(null);
+    rovo
+      .open({
+        type: 'forge',
+        agentKey: 'decision-receipt-agent',
+        agentName: 'Decision receipt',
+        prompt: `Show the decision receipt for ${key} and explain the label on each linked page.`,
+      })
+      .catch(() => setRovoNote('Rovo chat is not available on this site. The receipt above is the full record.'));
+  }, [state]);
 
   const interrupted = {
     ok: false,
@@ -191,11 +207,17 @@ const App = () => {
               {receipt.overallLabel}
             </Lozenge>
           </Inline>
-          <Button appearance="subtle" onClick={check}>
-            Check again
-          </Button>
+          <Inline space="space.050">
+            <Button appearance="subtle" onClick={askRovo}>
+              Ask Rovo
+            </Button>
+            <Button appearance="subtle" onClick={check}>
+              Check again
+            </Button>
+          </Inline>
         </Inline>
         <Text>{receipt.overallDetail}</Text>
+        {rovoNote ? <Text size="small">{rovoNote}</Text> : null}
         <Text size="small">
           Checked {receipt.pages.length} linked {receipt.pages.length === 1 ? 'page' : 'pages'} with your permissions
           at {receipt.checkedAtLabel}. Nothing in Jira or Confluence is changed.
