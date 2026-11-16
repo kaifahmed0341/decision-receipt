@@ -1,0 +1,221 @@
+Review 2's 68-item set, page level, the reviewer's own scorer pointed at this repo, rules at cc20344. Run once after the rules were frozen. Items were not opened before this run; the review's findings quote parts of about a dozen of them.
+
+HIT  #1   RCPT-1   prose         expected support    got support   
+      After two rounds with the partner team, the integration council approved the plan to remove the legacy SOAP gateway. All partners have moved to REST and traffic on the gateway has been zero since August.
+      findings: [["support","phrase \"approved\""]]
+MISS #2   RCPT-1   prose         expected conflict   got mention   
+      We looked hard at removing the legacy SOAP gateway this quarter. Two banking partners still send about 4,000 calls a day through it, so the council asked us to leave it running until their contracts renew in 2027.
+      findings: [["mention",null]]
+HIT  #3   RCPT-1   notes         expected support    got support   
+      RCPT-1: Priya confirmed with legal, gateway can go. Ravi to switch it off on 12 Feb.
+      findings: [["support","phrase \"confirmed\""]]
+HIT  #4   RCPT-1   notes         expected mention    got mention   
+      SOAP gateway removal: discussed, no owner yet, revisit next week
+      findings: [["mention",null]]
+MISS #5   RCPT-1   non-native    expected support    got mention   
+      Is decided in the board that legacy SOAP gateway will be removed in end of March.
+      findings: [["mention","states a plan, without a decision phrase"]]
+HIT  #6   RCPT-1   non-native    expected conflict   got conflict  
+      Kindly note the removal of legacy SOAP gateway is not more possible this year because of the partner contract.
+      findings: [["conflict","phrase \"not more possible\""]]
+HIT  #7   RCPT-1   adr           expected support    got support   
+      <h2>Status</h2><p>Accepted</p><h2>Context</h2><p>All partners call the REST API since August. The gateway costs two servers and a licence.</p><h2>Decision</h2><p>We remove the gateway in release 9.0 and return 410 for an
+      findings: [["support","status \"Accepted\""]]
+HIT  #8   RCPT-1   adr           expected conflict   got conflict  
+      <h2>Status</h2><p>Rejected</p><h2>Decision</h2><p>We keep the SOAP gateway for the two banking partners and revisit in 2027.</p>
+      findings: [["conflict","status \"Rejected\""],["mention","states the opposite of the task, without a decision phrase"]]
+MISS #9   RCPT-1   table         expected support    got mention   
+      <table><tbody><tr><th>Issue</th><th>Change</th><th>Decision</th><th>Date</th></tr><tr><td>RCPT-1</td><td>Remove legacy SOAP gateway</td><td>Go</td><td>3 Feb</td></tr></tbody></table>
+      findings: [["mention",null]]
+HIT  #10  RCPT-1   prose         expected irrelevant got irrelevant
+      The SOAP gateway dashboard was moved to the new Grafana folder.
+      findings: []
+MISS #11  RCPT-2   prose         expected support    got irrelevant
+      Security reviewed the risks with the vendor last Tuesday. Contractors will sign in through the company identity provider from 1 March, the same as employees, and their old local passwords expire that day.
+      findings: []
+MISS #12  RCPT-2   notes         expected conflict   got irrelevant
+      SSO for contractor accounts -> parked. Reason: IdP licence cost per seat too high. Mark to come back with numbers.
+      findings: []
+HIT  #13  RCPT-2   non-native    expected support    got support   
+      We have give the green light for single sign-on to contractor accounts, it go live with next sprint.
+      findings: [["support","phrase \"green light\""]]
+HIT  #14  RCPT-2   prose         expected mention    got mention   
+      Single sign-on for contractor accounts sounds reasonable but nobody owns the IdP config yet.
+      findings: [["mention",null]]
+HIT  #15  RCPT-2   prose         expected conflict   got conflict  
+      Single sign-on is approved for contractor accounts in the EU entity only; the US contractors stay on local passwords for now.
+      findings: [["conflict","\"approved\" for the opposite of the task"]]
+HIT  #16  RCPT-2   table         expected mention    got mention   
+      <table><tbody><tr><th>Issue</th><th>Topic</th><th>Status</th></tr><tr><td>RCPT-2</td><td>SSO for contractor accounts</td><td><ac:structured-macro ac:name="status"><ac:parameter ac:name="title">IN REVIEW</ac:parameter></a
+      findings: [["mention","status \"IN REVIEW\", but which way it decides the task is unclear"]]
+HIT  #17  RCPT-2   prose         expected mention    got mention   
+      Do contractor accounts need single sign-on if they only use the wiki?
+      findings: [["mention","question"]]
+MISS #18  RCPT-3   prose         expected support    got mention    (arguable)
+      Platform agreed to raise the upload limit to 2 GB once storage costs were checked, and the cost check came back fine last week, so this is a go.
+      findings: [["mention","hedged: \"agreed\" with \"once\""]]
+MISS #19  RCPT-3   prose         expected conflict   got mention   
+      The upload limit stays at 500 MB for now; finance did not accept the extra storage spend.
+      findings: [["mention","states the opposite of the task, without a decision phrase"]]
+MISS #20  RCPT-3   prose         expected conflict   got mention   
+      We will raise the upload limit to 1 GB, not 2 GB, as a first step.
+      findings: [["mention","states a plan, without a decision phrase"]]
+HIT  #21  RCPT-3   non-native    expected support    got support   
+      Upload limit increasing to 2 GB is accepted by product team, please proceed.
+      findings: [["support","phrase \"accepted\""]]
+HIT  #22  RCPT-3   notes         expected mention    got mention   
+      Upload limit 2GB? -> Anna checks with infra
+      findings: [["mention",null]]
+HIT  #23  RCPT-3   table-as-text expected conflict   got conflict  
+      RCPT-3 | Raise upload limit to 2 GB | Rejected | 4 Apr
+      findings: [["conflict","phrase \"Rejected\""]]
+MISS #24  RCPT-3   prose         expected irrelevant got mention   
+      The avatar upload limit was raised to 5 MB.
+      findings: [["mention","states a plan, without a decision phrase"]]
+MISS #25  RCPT-4   adr           expected support    got mention   
+      <h2>Status</h2><p>Status: Accepted</p><h2>Decision</h2><p>Nightly backups go to object storage with a 35 day lifecycle rule.</p>
+      findings: [["mention","status \"Accepted\", but which way it decides the task is unclear"],["mention",null]]
+HIT  #26  RCPT-4   prose         expected conflict   got conflict  
+      Moving nightly backups to object storage was approved in May, but the restore drill in June took nine hours, and the ops review rolled the change back. Backups stay on the NAS.
+      findings: [["conflict","phrase \"rolled the change back\""]]
+MISS #27  RCPT-4   prose         expected support    got conflict  
+      The June rollback of the object storage move for nightly backups was itself reversed after the restore tooling was fixed; nightly backups run against object storage again since 2 September.
+      findings: [["conflict","phrase \"reversed\""]]
+MISS #28  RCPT-4   notes         expected support    got mention   
+      Decision (ops sync, 14 Oct): nightly backups -> object storage. Done by Lee, restore verified.
+      findings: [["mention",null]]
+MISS #29  RCPT-4   non-native    expected conflict   got mention   
+      Nightly backups to object storage we cannot do it now, the budget is freeze until January.
+      findings: [["mention","\"cannot\", but it does not say for what"]]
+HIT  #30  RCPT-4   prose         expected irrelevant got irrelevant
+      Object storage pricing for the analytics team was agreed with the vendor.
+      findings: []
+HIT  #31  RCPT-4   prose         expected mention    got mention   
+      Someone should write down the restore steps for nightly backups before they move to object storage.
+      findings: [["mention",null]]
+HIT  #32  RCPT-5   prose         expected support    got support   
+      The SRE leads agreed the on-call rotation stays at one week.
+      findings: [["support","phrase \"agreed\""]]
+MISS #33  RCPT-5   prose         expected conflict   got mention   
+      From January the on-call rotation becomes two weeks, decided at the SRE offsite.
+      findings: [["mention",null]]
+HIT  #34  RCPT-5   prose         expected mention    got mention   
+      Some engineers want a longer on-call rotation than one week; we will survey the team in December.
+      findings: [["mention",null]]
+MISS #35  RCPT-5   non-native    expected support    got mention   
+      On-call rotation remain one week, no change, this is confirmed by Head of SRE.
+      findings: [["mention","\"confirmed\", but it does not say for what"]]
+MISS #36  RCPT-5   table         expected support    got mention   
+      <table><tbody><tr><th>Topic</th><th>Outcome</th></tr><tr><td>On-call rotation length</td><td>Unchanged (one week)</td></tr></tbody></table>
+      findings: [["mention",null]]
+MISS #37  RCPT-6   prose         expected support    got mention   
+      Password login for the admin portal will be switched off on 1 December; admins must use passkeys after that.
+      findings: [["mention","states a plan, without a decision phrase"]]
+MISS #38  RCPT-6   non-native    expected conflict   got mention   
+      Password login on admin portal must stay possible for break-glass, so we are not switching it off.
+      findings: [["mention","states the opposite of the task, without a decision phrase"]]
+MISS #39  RCPT-6   prose         expected conflict   got mention   
+      The security council discussed disabling password login for the admin portal at length. The break-glass account still needs a password, and the hardware tokens for the night shift have not arrived. The council chose to r
+      findings: [["mention",null]]
+HIT  #40  RCPT-6   prose         expected mention    got mention   
+      Disabling password login for the admin portal was raised by Omar; the notes do not record an outcome.
+      findings: [["mention","\"do not\", but it does not say for what"]]
+MISS #41  RCPT-6   notes         expected support    got mention   
+      AI: Jun to disable admin portal password login - DONE 3 Nov
+      findings: [["mention",null]]
+HIT  #42  RCPT-6   prose         expected irrelevant got irrelevant
+      Password rules for customer accounts were tightened to 14 characters.
+      findings: []
+MISS #43  RCPT-7   adr           expected conflict   got mention    (arguable)
+      <h2>Status</h2><p>Accepted</p><h2>Decision</h2><p>We adopt OpenTelemetry for tracing in all new services; existing services keep Zipkin until they are next touched.</p>
+      findings: [["mention","status \"Accepted\", but which way it decides the task is unclear"],["mention",null]]
+MISS #44  RCPT-7   prose         expected support    got mention   
+      After the pilot in the payments team, we chose OpenTelemetry as the tracing standard for every service. The Zipkin collectors will be shut down at the end of Q1.
+      findings: [["mention",null]]
+MISS #45  RCPT-7   prose         expected conflict   got mention   
+      OpenTelemetry for service tracing was evaluated and declined; we stay on the vendor agent because of the support contract.
+      findings: [["mention","\"declined\", but it does not say for what"]]
+HIT  #46  RCPT-7   non-native    expected mention    got mention   
+      Maybe we go with OpenTelemetry for tracing of services, depends of the vendor answer.
+      findings: [["mention",null]]
+HIT  #47  RCPT-7   notes         expected mention    got mention   
+      Service tracing: OpenTelemetry vs vendor agent - no decision, Kim to prepare comparison.
+      findings: [["mention","no decision: \"no decision\""]]
+HIT  #48  RCPT-7   prose         expected irrelevant got irrelevant
+      The OpenTelemetry meetup in Berlin is on 12 May.
+      findings: []
+HIT  #49  RCPT-8   prose         expected support    got support   
+      Legal signed off on cutting log retention to 30 days from 1 February.
+      findings: [["support","phrase \"signed off\""]]
+MISS #50  RCPT-8   prose         expected conflict   got mention   
+      Log retention cannot drop below 90 days because of the payment card audit.
+      findings: [["mention","\"cannot\", but it does not say for what"]]
+HIT  #51  RCPT-8   prose         expected conflict   got conflict  
+      We agreed to extend log retention to 180 days for the audit.
+      findings: [["conflict","\"agreed\" for the opposite of the task"]]
+HIT  #52  RCPT-8   table-as-text expected conflict   got conflict  
+      RCPT-8 | Reduce log retention to 30 days | Approved with exception: security logs keep 1 year
+      findings: [["conflict","partial: \"Approved\" with \"exception\""]]
+HIT  #53  RCPT-8   notes         expected mention    got mention   
+      log retention 30 days: agreed in principle, waiting on legal
+      findings: [["mention","hedged: \"agreed\" with \"in principle\""]]
+MISS #54  RCPT-8   non-native    expected support    got mention   
+      Retention of logs will reduce to 30 days, the decision is take by CTO on Monday.
+      findings: [["mention","states a plan, without a decision phrase"]]
+HIT  #55  RCPT-9   prose         expected support    got support   
+      RCPT-9 is approved for the 4.8 patch release.
+      findings: [["support","phrase \"approved\""]]
+MISS #56  RCPT-9   prose         expected support    got mention   
+      The fix for the timezone bug in invoice emails shipped in 4.8.1 and customers in Sydney now see the right date.
+      findings: [["mention",null]]
+MISS #57  RCPT-9   prose         expected conflict   got mention   
+      We decided not to fix the timezone bug in invoice emails before the billing rewrite; the rewrite replaces that code.
+      findings: [["mention","\"decided not to\", but it does not say for what"]]
+HIT  #58  RCPT-9   notes         expected mention    got mention   
+      The timezone bug in invoice emails was discussed on 3 March.
+      findings: [["mention",null]]
+HIT  #59  RCPT-9   notes         expected mention    got mention   
+      RCPT-9 raised by the support team in Q3 planning, no estimate yet.
+      findings: [["mention",null]]
+MISS #60  RCPT-9   non-native    expected conflict   got mention   
+      Timezone bug of invoice emails, we will not fix it in this release because is low priority.
+      findings: [["mention","\"will not\", but it does not say for what"]]
+MISS #61  RCPT-10  prose         expected support    got mention   
+      Translating the help centre into German is approved, the agency starts on 2 June.
+      findings: [["mention","\"approved\", but it does not say for what"]]
+MISS #62  RCPT-10  prose         expected conflict   got mention   
+      The German translation of the help centre is postponed to next year.
+      findings: [["mention","\"postponed\", but it does not say for what"]]
+HIT  #63  RCPT-10  notes         expected mention    got mention   
+      The German translation of the help centre came up in the meeting on 12 May, together with the French one.
+      findings: [["mention",null]]
+HIT  #64  RCPT-10  prose         expected irrelevant got irrelevant
+      The German sales deck was translated by the agency.
+      findings: []
+HIT  #65  RCPT-10  prose         expected mention    got mention   
+      Customers in Austria keep asking for a German help centre. Support estimates a third of tickets from the DACH region would go away. Translating the help centre into German costs about 18,000 euros a year with updates.
+      findings: [["mention",null],["mention",null]]
+MISS #66  RCPT-10  adr           expected conflict   got mention   
+      <table><tbody><tr><th>Status</th><td><ac:structured-macro ac:name="status"><ac:parameter ac:name="title">DECIDED</ac:parameter></ac:structured-macro></td></tr><tr><th>Decision</th><td>The help centre stays English only u
+      findings: [["mention","status \"DECIDED\", but which way it decides the task is unclear"],["mention","\"dropped from the plan\", but it does not say for what"]]
+MISS #67  RCPT-2   notes         expected support    got mention   
+      Decision: contractor accounts get single sign-on. (Ahmed and Lina agreed, Tom against.)
+      findings: [["mention","\"Decision:\", but it does not say for what"]]
+HIT  #68  RCPT-6   prose         expected support    got support   
+      In March the council rejected disabling password login for the admin portal because the passkey rollout was incomplete. The rollout finished in October, and on 4 November the council approved disabling password login for
+      findings: [["mention","\"rejected\", but it does not say for what"],["support","phrase \"approved\""]]
+
+36 of 68 correct (52.9 percent).
+  support    labelled 25, predicted 9, correct 9, precision 1.00, recall 0.36
+  conflict   labelled 22, predicted 8, correct 7, precision 0.88, recall 0.32
+  mention    labelled 15, predicted 44, correct 15, precision 0.34, recall 1.00
+  irrelevant labelled 6, predicted 7, correct 5, precision 0.71, recall 0.83
+  conflicts called support: 0; supports called conflict: 1
+
+Confusion (rows = label, columns = rules):
+            support    conflict   mention    irrelevant 
+  support   9          1          14         1          
+  conflict  0          7          14         1          
+  mention   0          0          15         0          
+  irrelevant0          0          1          5          
+  abstention: 30 of 47 support or conflict items left undecided (64 percent)

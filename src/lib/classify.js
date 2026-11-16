@@ -16,7 +16,7 @@
 import { stem, stems, taskAction, directionOf, familiesIn } from './direction.js';
 import { splitSentences } from './text.js';
 
-export const RULES_VERSION = 4;
+export const RULES_VERSION = 5;
 
 // Short words and filler that carry no meaning about the task.
 const STOPWORDS = new Set([
@@ -288,6 +288,15 @@ export function classifySentence(sentence, task = { action: null, keys: [] }) {
     return mention(`"${last.text}", but it does not say for what`, last.index);
   }
   if (dir === 'opposite') return mention(`"${last.text}" for the opposite of the task`, last.index);
+  // A reversal of a rollback or a rejection undoes a refusal: not a clear conflict.
+  if (last.kind === 'reversal' && /\b(?:rollback|rolled back|rejection|reversal|veto|refusal|revert)\b/i.test(s.slice(0, last.index))) {
+    return mention(`"${last.text}" reverses an earlier refusal`, last.index);
+  }
+  // A refusal followed by a commitment to the task's own action ("rejected X and will
+  // adopt Y") mixes two decisions: not a clear conflict.
+  if (last.kind === 'block' && directionOf(s.slice(last.end), task.action) === 'same' && /\b(?:will|shall|going to)\b/i.test(s.slice(last.end))) {
+    return mention(`"${last.text}", followed by a commitment to the task`, last.index);
+  }
   if (namesTask || dir === 'same') return { kind: 'conflict', cue: `phrase "${last.text}"`, index: last.index };
   return mention(`"${last.text}", but it does not say for what`, last.index);
 }

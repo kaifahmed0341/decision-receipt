@@ -1,111 +1,112 @@
-Development set run, rules at commit 74155d0.
+Development set, rules version 5.
 
 HIT   DREC-1  expected support    got support     Approved: remove the v1 CSV export endpoint in 4.2 (DREC-1).
 HIT   DREC-1  expected conflict   got conflict    We decided to keep the v1 CSV export endpoint for another year.
-HIT   DREC-1  expected support    got support     The v1 CSV export endpoint is deprecated and will be removed after the migration window.
+MISS  DREC-1  expected support    got conflict    The v1 CSV export endpoint is deprecated and will be removed after the migration window.
 HIT   DREC-1  expected conflict   got conflict    DREC-1 is on hold until the billing migration finishes.
 HIT   DREC-1  expected mention    got mention     Should we remove the v1 CSV export endpoint before 4.2?
 HIT   DREC-1  expected support    got support     The proposal to keep the v1 CSV export endpoint was rejected, so removal goes ahead (DREC-1).
 HIT   DREC-1  expected irrelevant got irrelevant  The v2 export now handles every report type.
 HIT   DREC-2  expected support    got support     The billing team agreed to move invoice PDFs to the new renderer (DREC-2).
 HIT   DREC-2  expected conflict   got conflict    We will not switch invoice PDFs to the new renderer until the accessibility fixes ship.
-HIT   DREC-2  expected support    got support     Invoice PDFs switch to the new renderer in release 4.2.
+MISS  DREC-2  expected support    got mention     Invoice PDFs switch to the new renderer in release 4.2.
 HIT   DREC-2  expected mention    got mention     Nobody objected to switching invoice PDFs to the new renderer.
 HIT   DREC-2  expected conflict   got conflict    Status: Superseded by the March review.
 HIT   DREC-2  expected irrelevant got irrelevant  Renderer benchmarks are in the appendix.
 HIT   DREC-2  expected conflict   got conflict    It isn't approved yet to switch invoice PDFs to the new renderer.
 HIT   DREC-3  expected support    got support     Decision: go. Raise the public API rate limit to 600 requests per minute from Monday.
 HIT   DREC-3  expected mention    got mention     The group wants load test results before raising the public API rate limit.
-HIT   DREC-3  expected conflict   got conflict    The public API rate limit stays at 300 requests per minute.
+MISS  DREC-3  expected conflict   got mention     The public API rate limit stays at 300 requests per minute.
 HIT   DREC-3  expected irrelevant got irrelevant  Approved the new rate limit dashboards for the API team.
 HIT   DREC-3  expected mention    got mention     We confirmed DREC-3 can ship once the load tests pass.
 HIT   DREC-6  expected conflict   got conflict    Legal has not approved moving audit logs to cold storage (DREC-6).
 HIT   DREC-6  expected support    got support     The security group agreed to move audit logs to cold storage after 90 days.
-HIT   DREC-6  expected conflict   got conflict    Audit logs older than 90 days must not leave hot storage.
+MISS  DREC-6  expected conflict   got mention     Audit logs older than 90 days must not leave hot storage.
 HIT   DREC-6  expected irrelevant got irrelevant  Cold storage pricing is listed below.
 HIT   DREC-6  expected mention    got mention     There is no decision yet on DREC-6.
 HIT   DREC-6  expected conflict   got conflict    DREC-6 was approved, but legal reversed it on Friday.
 HIT   DREC-7  expected support    got support     Approved: the admin console moves to single sign-on in release 4.3 (DREC-7).
 HIT   DREC-7  expected conflict   got conflict    Deferred: single sign-on for the admin console waits for release 4.4.
-HIT   DREC-7  expected support    got support     The admin console will use single sign-on from 4.3.
-HIT   DREC-7  expected conflict   got conflict    We don't plan to change how people sign in to the admin console this year.
-HIT   DREC-7  expected support    got support     Single sign-on for the admin console: go ahead.
+MISS  DREC-7  expected support    got mention     The admin console will use single sign-on from 4.3.
+MISS  DREC-7  expected conflict   got mention     We don't plan to change how people sign in to the admin console this year.
+MISS  DREC-7  expected support    got mention     Single sign-on for the admin console: go ahead.
 HIT   DREC-7  expected mention    got mention     Customers asked whether the admin console supports single sign-on.
-MISS  DREC-7  expected support    got conflict    We will not do anything else before the admin console switches to single sign-on.
+MISS  DREC-7  expected support    got mention     We will not do anything else before the admin console switches to single sign-on.
 HIT   DEV-1  expected support    got support     Decision: retire the nightly batch importer at the end of March.
 HIT   DEV-1  expected conflict   got conflict    We agreed to keep the nightly batch importer running until the new pipeline is stable.
-HIT   DEV-1  expected conflict   got conflict    The nightly batch importer stays in place for the finance team.
+MISS  DEV-1  expected conflict   got mention     The nightly batch importer stays in place for the finance team.
 HIT   DEV-1  expected conflict   got conflict    Retiring the nightly batch importer was approved, then rolled back after the data loss incident.
-HIT   DEV-1  expected support    got support     The nightly batch importer will be retired on 15 April.
+MISS  DEV-1  expected support    got mention     The nightly batch importer will be retired on 15 April.
 HIT   DEV-1  expected mention    got mention     Should we retire the nightly batch importer this quarter?
 HIT   DEV-1  expected mention    got mention     DEV-1 is approved in principle, pending sign-off from finance.
 HIT   DEV-1  expected irrelevant got irrelevant  The batch importer logs moved to the new bucket.
 HIT   DEV-1  expected mention    got mention     Nobody has decided what happens to the nightly batch importer.
 HIT   DEV-1  expected support    got support     DEV-1: approved.
-HIT   DEV-2  expected support    got support     The security group signed off on passkeys for customer login.
-HIT   DEV-2  expected conflict   got conflict    Passkeys are approved for staff accounts only; customer login waits for the audit.
+MISS  DEV-2  expected support    got mention     The security group signed off on passkeys for customer login.
+MISS  DEV-2  expected conflict   got mention     Passkeys are approved for staff accounts only; customer login waits for the audit.
 HIT   DEV-2  expected conflict   got conflict    We decided not to enable passkeys for customer login this year.
-HIT   DEV-2  expected support    got support     Passkeys for customer login go live in release 7.2.
+MISS  DEV-2  expected support    got mention     Passkeys for customer login go live in release 7.2.
 HIT   DEV-2  expected mention    got mention     Passkeys might be enabled for customer login after the pilot.
 HIT   DEV-2  expected irrelevant got irrelevant  Customer login now shows a clearer error message.
 HIT   DEV-2  expected conflict   got conflict    DEV-2 was superseded by the single sign-on project.
 HIT   DEV-2  expected support    got support     Enable passkeys for customer login: yes.
-HIT   DEV-3  expected conflict   got conflict    The upload size limit stays at 500 MB.
+MISS  DEV-3  expected conflict   got mention     The upload size limit stays at 500 MB.
 HIT   DEV-3  expected conflict   got conflict    We approved lowering the upload size limit to 250 MB to cut storage costs.
 HIT   DEV-3  expected support    got support     The board approved raising the upload size limit to 2 GB.
 HIT   DEV-3  expected mention    got mention     Raising the upload size limit was discussed, but nothing was agreed.
-HIT   DEV-3  expected support    got support     Upload size limit: 2 GB from 1 February.
+MISS  DEV-3  expected support    got mention     Upload size limit: 2 GB from 1 February.
 HIT   DEV-3  expected irrelevant got irrelevant  Upload speeds improved after the CDN change.
 HIT   DEV-3  expected conflict   got conflict    DEV-3 is on hold until the storage contract is renewed.
 HIT   DEV-3  expected conflict   got conflict    The upload size limit increase to 2 GB is confirmed for enterprise plans only.
-HIT   DEV-4  expected support    got support     The status page moves to a managed provider in Q2.
-HIT   DEV-4  expected conflict   got conflict    We will keep hosting the status page ourselves.
+MISS  DEV-4  expected support    got mention     The status page moves to a managed provider in Q2.
+MISS  DEV-4  expected conflict   got mention     We will keep hosting the status page ourselves.
 HIT   DEV-4  expected mention    got mention     Moving the status page to a managed provider was proposed by the SRE team.
 HIT   DEV-4  expected conflict   got conflict    The status page migration was reverted after one week.
-HIT   DEV-4  expected support    got support     The status page was moved to a managed provider and the old host was shut down.
+MISS  DEV-4  expected support    got mention     The status page was moved to a managed provider and the old host was shut down.
 HIT   DEV-4  expected irrelevant got irrelevant  Status page uptime was 99.98 percent last month.
 HIT   DEV-4  expected support    got support     DEV-4 got the green light from the platform lead.
-HIT   DEV-5  expected support    got support     The legacy REST API remains available for existing partners.
+MISS  DEV-5  expected support    got mention     The legacy REST API remains available for existing partners.
 HIT   DEV-5  expected support    got support     We agreed to keep the legacy REST API for existing partners until 2028.
-HIT   DEV-5  expected conflict   got conflict    The legacy REST API will be removed for all partners on 1 June.
+MISS  DEV-5  expected conflict   got mention     The legacy REST API will be removed for all partners on 1 June.
 HIT   DEV-5  expected conflict   got conflict    Approved: retire the legacy REST API.
 HIT   DEV-5  expected mention    got mention     Do we keep the legacy REST API for existing partners?
 HIT   DEV-5  expected irrelevant got irrelevant  The legacy REST API documentation was updated.
-HIT   DEV-6  expected support    got support     The support inbox switches to the new ticketing tool on 3 March.
+MISS  DEV-6  expected support    got mention     The support inbox switches to the new ticketing tool on 3 March.
 HIT   DEV-6  expected conflict   got conflict    Support leads accepted the new ticketing tool, but the support inbox switch is deferred to May.
 HIT   DEV-6  expected conflict   got conflict    The support inbox will not move until the tool supports shared macros.
 HIT   DEV-6  expected mention    got mention     We will probably switch the support inbox to the new ticketing tool next month.
 HIT   DEV-6  expected conflict   got conflict    Switching the support inbox to the new ticketing tool is approved for the EU team as a first phase.
 HIT   DEV-6  expected irrelevant got irrelevant  The new ticketing tool has a nicer search.
 HIT   DEV-6  expected support    got support     Agreed: switch the support inbox to the new ticketing tool.
-HIT   DEV-7  expected support    got support     Audit logging for the admin export is mandatory from 1 April.
-HIT   DEV-7  expected conflict   got conflict    We chose not to add audit logging to the admin export because the export is being removed.
-HIT   DEV-7  expected conflict   got conflict    Audit logging for the admin export was replaced by the new event stream.
+MISS  DEV-7  expected support    got mention     Audit logging for the admin export is mandatory from 1 April.
+MISS  DEV-7  expected conflict   got mention     We chose not to add audit logging to the admin export because the export is being removed.
+MISS  DEV-7  expected conflict   got mention     Audit logging for the admin export was replaced by the new event stream.
 HIT   DEV-7  expected mention    got mention     Adding audit logging to the admin export is pending legal review.
 HIT   DEV-7  expected irrelevant got irrelevant  The admin export now runs in under a minute.
-MISS  DEV-7  expected mention    got support     The team agreed the log format for the admin export audit trail.
+HIT   DEV-7  expected mention    got mention     The team agreed the log format for the admin export audit trail.
 HIT   DEV-7  expected support    got support     DEV-7 was approved in March and is still approved after the April review.
-HIT   DEV-8  expected support    got support     Password reset by SMS is disabled from 10 May.
+MISS  DEV-8  expected support    got mention     Password reset by SMS is disabled from 10 May.
 HIT   DEV-8  expected conflict   got conflict    We agreed to keep password reset by SMS for customers without email.
-HIT   DEV-8  expected conflict   got conflict    Password reset by SMS remains on for now.
+MISS  DEV-8  expected conflict   got mention     Password reset by SMS remains on for now.
 HIT   DEV-8  expected conflict   got conflict    Disabling password reset by SMS was rejected by support.
-HIT   DEV-8  expected support    got support     The proposal to keep password reset by SMS was rejected, so it will be disabled in June.
+MISS  DEV-8  expected support    got mention     The proposal to keep password reset by SMS was rejected, so it will be disabled in June.
 HIT   DEV-8  expected irrelevant got irrelevant  Password reset by email had a bug last week.
 HIT   DEV-8  expected mention    got mention     Is password reset by SMS still needed?
 HIT   DEV-8  expected mention    got mention     We don't think password reset by SMS should be disabled yet.
 HIT   DEV-8  expected conflict   got conflict    Never disable password reset by SMS without a fallback.
 
-92 of 94 correct (97.9 percent).
-  support    labelled 30, predicted 30, correct 29, precision 0.97, recall 0.97
-  conflict   labelled 34, predicted 35, correct 34, precision 0.97, recall 1
-  mention    labelled 18, predicted 17, correct 17, precision 1, recall 0.94
+67 of 94 correct (71.3 percent).
+  support    labelled 30, predicted 14, correct 14, precision 1, recall 0.47
+  conflict   labelled 34, predicted 24, correct 23, precision 0.96, recall 0.68
+  mention    labelled 18, predicted 44, correct 18, precision 0.41, recall 1
   irrelevant labelled 12, predicted 12, correct 12, precision 1, recall 1
   conflicts the rules called support: 0
   supports the rules called conflict: 1
+  abstention: 26 of 64 support or conflict items left undecided (41 percent)
 
 Confusion (rows = human label, columns = rule output):
              support    conflict   mention    irrelevant
-  support    29         1          0          0         
-  conflict   0          34         0          0         
-  mention    1          0          17         0         
+  support    14         1          15         0         
+  conflict   0          23         11         0         
+  mention    0          0          18         0         
   irrelevant 0          0          0          12        

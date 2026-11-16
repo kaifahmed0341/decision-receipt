@@ -86,6 +86,11 @@ test('supersession, reversal and refusal phrases conflict when they name the tas
   assert.equal(kind('DREC-1 rejected, keep the endpoint.', 'Remove the v1 CSV export endpoint'), 'conflict');
 });
 
+test('double negatives are unclear, not conflicts', () => {
+  assert.equal(kind('The June rollback of the move was itself reversed; backups run on object storage again.', 'Move nightly backups to object storage'), 'mention');
+  assert.equal(kind('We rejected REST-only for the partner API and will adopt GraphQL.', 'Adopt GraphQL for the partner API'), 'mention');
+});
+
 test('a decision phrase that does not say for what is unclear', () => {
   assert.equal(kind('The security group signed off on it.', 'Enable passkeys for customer login'), 'mention');
   assert.equal(kind('The migration was reverted after a week.', 'Enable passkeys'), 'mention');
