@@ -12,8 +12,17 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { summaryTerms, relevance, classifySentence } from '../src/lib/classify.js';
 
-const file = process.argv.find((a) => a.endsWith('.json')) || fileURLToPath(new URL('../fixtures/labelled-excerpts.json', import.meta.url));
-const data = JSON.parse(readFileSync(file, 'utf8'));
+// Default: the development set (both files). Pass one or more JSON files to score others.
+const given = process.argv.filter((a) => a.endsWith('.json'));
+const files = given.length
+  ? given
+  : ['../fixtures/labelled-excerpts.json', '../fixtures/dev-excerpts.json'].map((f) => fileURLToPath(new URL(f, import.meta.url)));
+const data = { issues: {}, excerpts: [] };
+for (const f of files) {
+  const d = JSON.parse(readFileSync(f, 'utf8'));
+  Object.assign(data.issues, d.issues);
+  data.excerpts.push(...d.excerpts);
+}
 const LABELS = ['support', 'conflict', 'mention', 'irrelevant'];
 
 export function predict(text, issueKey, summary) {
@@ -34,7 +43,8 @@ const perLabel = Object.fromEntries(
     const tp = confusion[l][l];
     const predicted = LABELS.reduce((n, e) => n + confusion[e][l], 0);
     const actual = LABELS.reduce((n, g) => n + confusion[l][g], 0);
-    return [l, { expected: actual, predicted, correct: tp }];
+    const round = (x) => (Number.isFinite(x) ? +x.toFixed(2) : null);
+    return [l, { expected: actual, predicted, correct: tp, precision: round(tp / predicted), recall: round(tp / actual) }];
   })
 );
 // The costly mistake for this app: a sentence a human reads as a conflict that the rules call support.
@@ -51,7 +61,7 @@ if (process.argv.includes('--json')) {
   console.log(`${hits} of ${rows.length} correct (${(100 * summary.accuracy).toFixed(1)} percent).`);
   for (const l of LABELS) {
     const p = perLabel[l];
-    console.log(`  ${l.padEnd(10)} labelled ${p.expected}, predicted ${p.predicted}, correct ${p.correct}`);
+    console.log(`  ${l.padEnd(10)} labelled ${p.expected}, predicted ${p.predicted}, correct ${p.correct}, precision ${p.precision ?? 'n/a'}, recall ${p.recall ?? 'n/a'}`);
   }
   console.log(`  conflicts the rules called support: ${conflictShownAsSupport}`);
   console.log(`  supports the rules called conflict: ${supportShownAsConflict}`);

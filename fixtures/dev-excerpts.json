@@ -1,0 +1,325 @@
+{
+ "about": "Development set for tuning the rules, written on 16 November 2026 before any slice 3 rule change. All text fictional. Labels: support, conflict, mention (about the task, no decision), irrelevant (not about this task). Conventions: a partial approval that withholds part of the task as written, or a block that stops it now, is conflict; an approval in principle or pending a condition not yet met is mention; a stated plan with a date or release is support; keeping the current state is conflict for a task that changes it and support for a task that keeps it. The reviewer's held-out set uses the same first three conventions, taken from its 'about' field.",
+ "issues": {
+  "DEV-1": "Retire the nightly batch importer",
+  "DEV-2": "Enable passkeys for customer login",
+  "DEV-3": "Raise the upload size limit to 2 GB",
+  "DEV-4": "Move the status page to a managed provider",
+  "DEV-5": "Keep the legacy REST API for existing partners",
+  "DEV-6": "Switch the support inbox to the new ticketing tool",
+  "DEV-7": "Add audit logging to the admin export",
+  "DEV-8": "Disable password reset by SMS"
+ },
+ "excerpts": [
+  {
+   "issue": "DEV-1",
+   "expected": "support",
+   "text": "Decision: retire the nightly batch importer at the end of March."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "conflict",
+   "text": "We agreed to keep the nightly batch importer running until the new pipeline is stable."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "conflict",
+   "text": "The nightly batch importer stays in place for the finance team."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "conflict",
+   "text": "Retiring the nightly batch importer was approved, then rolled back after the data loss incident."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "support",
+   "text": "The nightly batch importer will be retired on 15 April."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "mention",
+   "text": "Should we retire the nightly batch importer this quarter?"
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "mention",
+   "text": "DEV-1 is approved in principle, pending sign-off from finance."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "irrelevant",
+   "text": "The batch importer logs moved to the new bucket."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "mention",
+   "text": "Nobody has decided what happens to the nightly batch importer."
+  },
+  {
+   "issue": "DEV-1",
+   "expected": "support",
+   "text": "DEV-1: approved."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "support",
+   "text": "The security group signed off on passkeys for customer login."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "conflict",
+   "text": "Passkeys are approved for staff accounts only; customer login waits for the audit."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "conflict",
+   "text": "We decided not to enable passkeys for customer login this year."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "support",
+   "text": "Passkeys for customer login go live in release 7.2."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "mention",
+   "text": "Passkeys might be enabled for customer login after the pilot."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "irrelevant",
+   "text": "Customer login now shows a clearer error message."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "conflict",
+   "text": "DEV-2 was superseded by the single sign-on project."
+  },
+  {
+   "issue": "DEV-2",
+   "expected": "support",
+   "text": "Enable passkeys for customer login: yes."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "conflict",
+   "text": "The upload size limit stays at 500 MB."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "conflict",
+   "text": "We approved lowering the upload size limit to 250 MB to cut storage costs."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "support",
+   "text": "The board approved raising the upload size limit to 2 GB."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "mention",
+   "text": "Raising the upload size limit was discussed, but nothing was agreed."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "support",
+   "text": "Upload size limit: 2 GB from 1 February."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "irrelevant",
+   "text": "Upload speeds improved after the CDN change."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "conflict",
+   "text": "DEV-3 is on hold until the storage contract is renewed."
+  },
+  {
+   "issue": "DEV-3",
+   "expected": "conflict",
+   "text": "The upload size limit increase to 2 GB is confirmed for enterprise plans only."
+  },
+  {
+   "issue": "DEV-4",
+   "expected": "support",
+   "text": "The status page moves to a managed provider in Q2."
+  },
+  {
+   "issue": "DEV-4",
+   "expected": "conflict",
+   "text": "We will keep hosting the status page ourselves."
+  },
+  {
+   "issue": "DEV-4",
+   "expected": "mention",
+   "text": "Moving the status page to a managed provider was proposed by the SRE team."
+  },
+  {
+   "issue": "DEV-4",
+   "expected": "conflict",
+   "text": "The status page migration was reverted after one week."
+  },
+  {
+   "issue": "DEV-4",
+   "expected": "support",
+   "text": "The status page was moved to a managed provider and the old host was shut down."
+  },
+  {
+   "issue": "DEV-4",
+   "expected": "irrelevant",
+   "text": "Status page uptime was 99.98 percent last month."
+  },
+  {
+   "issue": "DEV-4",
+   "expected": "support",
+   "text": "DEV-4 got the green light from the platform lead."
+  },
+  {
+   "issue": "DEV-5",
+   "expected": "support",
+   "text": "The legacy REST API remains available for existing partners."
+  },
+  {
+   "issue": "DEV-5",
+   "expected": "support",
+   "text": "We agreed to keep the legacy REST API for existing partners until 2028."
+  },
+  {
+   "issue": "DEV-5",
+   "expected": "conflict",
+   "text": "The legacy REST API will be removed for all partners on 1 June."
+  },
+  {
+   "issue": "DEV-5",
+   "expected": "conflict",
+   "text": "Approved: retire the legacy REST API."
+  },
+  {
+   "issue": "DEV-5",
+   "expected": "mention",
+   "text": "Do we keep the legacy REST API for existing partners?"
+  },
+  {
+   "issue": "DEV-5",
+   "expected": "irrelevant",
+   "text": "The legacy REST API documentation was updated."
+  },
+  {
+   "issue": "DEV-6",
+   "expected": "support",
+   "text": "The support inbox switches to the new ticketing tool on 3 March."
+  },
+  {
+   "issue": "DEV-6",
+   "expected": "conflict",
+   "text": "Support leads accepted the new ticketing tool, but the support inbox switch is deferred to May."
+  },
+  {
+   "issue": "DEV-6",
+   "expected": "conflict",
+   "text": "The support inbox will not move until the tool supports shared macros."
+  },
+  {
+   "issue": "DEV-6",
+   "expected": "mention",
+   "text": "We will probably switch the support inbox to the new ticketing tool next month."
+  },
+  {
+   "issue": "DEV-6",
+   "expected": "conflict",
+   "text": "Switching the support inbox to the new ticketing tool is approved for the EU team as a first phase."
+  },
+  {
+   "issue": "DEV-6",
+   "expected": "irrelevant",
+   "text": "The new ticketing tool has a nicer search."
+  },
+  {
+   "issue": "DEV-6",
+   "expected": "support",
+   "text": "Agreed: switch the support inbox to the new ticketing tool."
+  },
+  {
+   "issue": "DEV-7",
+   "expected": "support",
+   "text": "Audit logging for the admin export is mandatory from 1 April."
+  },
+  {
+   "issue": "DEV-7",
+   "expected": "conflict",
+   "text": "We chose not to add audit logging to the admin export because the export is being removed."
+  },
+  {
+   "issue": "DEV-7",
+   "expected": "conflict",
+   "text": "Audit logging for the admin export was replaced by the new event stream."
+  },
+  {
+   "issue": "DEV-7",
+   "expected": "mention",
+   "text": "Adding audit logging to the admin export is pending legal review."
+  },
+  {
+   "issue": "DEV-7",
+   "expected": "irrelevant",
+   "text": "The admin export now runs in under a minute."
+  },
+  {
+   "issue": "DEV-7",
+   "expected": "mention",
+   "text": "The team agreed the log format for the admin export audit trail."
+  },
+  {
+   "issue": "DEV-7",
+   "expected": "support",
+   "text": "DEV-7 was approved in March and is still approved after the April review."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "support",
+   "text": "Password reset by SMS is disabled from 10 May."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "conflict",
+   "text": "We agreed to keep password reset by SMS for customers without email."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "conflict",
+   "text": "Password reset by SMS remains on for now."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "conflict",
+   "text": "Disabling password reset by SMS was rejected by support."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "support",
+   "text": "The proposal to keep password reset by SMS was rejected, so it will be disabled in June."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "irrelevant",
+   "text": "Password reset by email had a bug last week."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "mention",
+   "text": "Is password reset by SMS still needed?"
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "mention",
+   "text": "We don't think password reset by SMS should be disabled yet."
+  },
+  {
+   "issue": "DEV-8",
+   "expected": "conflict",
+   "text": "Never disable password reset by SMS without a fallback."
+  }
+ ]
+}
