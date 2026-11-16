@@ -4,6 +4,8 @@
 
 Built for [Codegeist 2026](https://codegeist2026.devpost.com/), category Apps for Software Teams. For the engineer or lead who has to show why a change was allowed to start.
 
+**Demo video:** <https://www.youtube.com/watch?v=VCIL7MIdYqM> (3:52, English captions)
+
 ![DREC-2: one page agrees, another says "will not"](docs/proof/drec-2-conflict.png)
 
 ## Three things it shows
